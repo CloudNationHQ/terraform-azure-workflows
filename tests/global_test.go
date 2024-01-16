@@ -23,9 +23,16 @@ type MarkdownValidation struct {
 
 type TerraformConfig struct {
 	Resource []Resource `hcl:"resource,block"`
+	Data     []Data     `hcl:"data,block"`
 }
 
 type Resource struct {
+	Type       string   `hcl:"type,label"`
+	Name       string   `hcl:"name,label"`
+	Properties hcl.Body `hcl:",remain"`
+}
+
+type Data struct {
 	Type       string   `hcl:"type,label"`
 	Name       string   `hcl:"name,label"`
 	Properties hcl.Body `hcl:",remain"`
@@ -168,7 +175,6 @@ func ExtractReadmeResources(data string) ([]string, error) {
 
 func ExtractTerraformResources() ([]string, error) {
 	parser := hclparse.NewParser()
-	// file, diags := parser.ParseHCLFile("../main.tf")
 	file, diags := parser.ParseHCLFile(os.Getenv("GITHUB_WORKSPACE") + "/caller/main.tf")
 	if diags.HasErrors() {
 		return nil, errors.New(diags.Error())
@@ -184,8 +190,33 @@ func ExtractTerraformResources() ([]string, error) {
 	for _, resource := range config.Resource {
 		resources = append(resources, resource.Type)
 	}
+
+	for _, data := range config.Data {
+		resources = append(resources, data.Type)
+	}
+
 	return resources, nil
 }
+
+//func ExtractTerraformResources() ([]string, error) {
+//parser := hclparse.NewParser()
+//file, diags := parser.ParseHCLFile(os.Getenv("GITHUB_WORKSPACE") + "/caller/main.tf")
+//if diags.HasErrors() {
+//return nil, errors.New(diags.Error())
+//}
+
+//var config TerraformConfig
+//diags = gohcl.DecodeBody(file.Body, nil, &config)
+//if diags.HasErrors() {
+//return nil, errors.New(diags.Error())
+//}
+
+//var resources []string
+//for _, resource := range config.Resource {
+//resources = append(resources, resource.Type)
+//}
+//return resources, nil
+//}
 
 func (ts *MarkdownValidation) ValidateTerraformDefinitions(t *testing.T) {
 	tfResources, err := ExtractTerraformResources()
