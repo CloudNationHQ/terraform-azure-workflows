@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"path/filepath"
 	"net/url"
 	"os"
 	"regexp"
@@ -173,29 +174,99 @@ func ExtractReadmeResources(data string) ([]string, error) {
 	return resources, nil
 }
 
+//func ExtractTerraformResources() ([]string, error) {
+	//parser := hclparse.NewParser()
+	//file, diags := parser.ParseHCLFile(os.Getenv("GITHUB_WORKSPACE") + "/caller/main.tf")
+	//if diags.HasErrors() {
+		//return nil, errors.New(diags.Error())
+	//}
+
+	//var config TerraformConfig
+	//diags = gohcl.DecodeBody(file.Body, nil, &config)
+	//if diags.HasErrors() {
+		//return nil, errors.New(diags.Error())
+	//}
+
+	//var resources []string
+	//for _, resource := range config.Resource {
+		//resources = append(resources, resource.Type)
+	//}
+
+	//for _, data := range config.Data {
+		//resources = append(resources, data.Type)
+	//}
+
+	//return resources, nil
+//}
+
 func ExtractTerraformResources() ([]string, error) {
-	parser := hclparse.NewParser()
-	file, diags := parser.ParseHCLFile(os.Getenv("GITHUB_WORKSPACE") + "/caller/main.tf")
-	if diags.HasErrors() {
-		return nil, errors.New(diags.Error())
-	}
+    var resources []string
 
-	var config TerraformConfig
-	diags = gohcl.DecodeBody(file.Body, nil, &config)
-	if diags.HasErrors() {
-		return nil, errors.New(diags.Error())
-	}
+    // Extract from specific main.tf
+    specificResources, err := extractFromFilePath(os.Getenv("GITHUB_WORKSPACE") + "/caller/main.tf")
+    if err != nil {
+        return nil, err
+    }
+    resources = append(resources, specificResources...)
 
-	var resources []string
-	for _, resource := range config.Resource {
-		resources = append(resources, resource.Type)
-	}
+    // Recursive extraction from modules directory
+    modulesResources, err := extractRecursively(os.Getenv("GITHUB_WORKSPACE") + "/caller/modules")
+    if err != nil {
+        return nil, err
+    }
+    resources = append(resources, modulesResources...)
 
-	for _, data := range config.Data {
-		resources = append(resources, data.Type)
-	}
+    return resources, nil
+}
 
-	return resources, nil
+// extractRecursively traverses a directory and extracts resources from all main.tf files.
+func extractRecursively(dirPath string) ([]string, error) {
+    var resources []string
+    err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+        if err != nil {
+            return err
+        }
+        if info.Mode().IsRegular() && filepath.Base(path) == "main.tf" {
+            fileResources, err := extractFromFilePath(path)
+            if err != nil {
+                return err
+            }
+            resources = append(resources, fileResources...)
+        }
+        return nil
+    })
+
+    if err != nil {
+        return nil, err
+    }
+
+    return resources, nil
+}
+
+// extractFromFilePath extracts resources from a given file path.
+func extractFromFilePath(filePath string) ([]string, error) {
+    parser := hclparse.NewParser()
+    file, diags := parser.ParseHCLFile(filePath)
+    if diags.HasErrors() {
+        return nil, errors.New(diags.Error())
+    }
+
+    var config TerraformConfig
+    diags = gohcl.DecodeBody(file.Body, nil, &config)
+    if diags.HasErrors() {
+        return nil, errors.New(diags.Error())
+    }
+
+    var fileResources []string
+    for _, resource := range config.Resource {
+        fileResources = append(fileResources, resource.Type)
+    }
+
+    for _, data := range config.Data {
+        fileResources = append(fileResources, data.Type)
+    }
+
+    return fileResources, nil
 }
 
 //func ExtractTerraformResources() ([]string, error) {
