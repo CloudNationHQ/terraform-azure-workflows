@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -168,9 +167,8 @@ func ExtractReadmeResources(data string) ([]string, error) {
 }
 
 func ExtractTerraformResources() ([]string, error) {
-	tffPath := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "main.tf")
 	parser := hclparse.NewParser()
-	file, diags := parser.ParseHCLFile(tffPath)
+	file, diags := parser.ParseHCLFile("../main.tf")
 	if diags.HasErrors() {
 		return nil, errors.New(diags.Error())
 	}
