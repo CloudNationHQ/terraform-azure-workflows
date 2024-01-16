@@ -1,0 +1,65 @@
+name: validate
+
+on:
+  workflow_call:
+    inputs:
+      test:
+        required: false
+        type: string
+        default: complete
+    secrets:
+      ARM_CLIENT_ID:
+        required: true
+      ARM_CLIENT_SECRET:
+        required: true
+      ARM_SUBSCRIPTION_ID:
+        required: true
+      ARM_TENANT_ID:
+        required: true
+      AZURE_CREDENTIALS:
+        required: true
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    environment : development
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ env.AZURE_CREDENTIALS }}
+
+      - name: setup terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      - name: terraform init
+        run: terraform init
+
+      - name: setup go
+        uses: actions/setup-go@v3
+        with:
+          check-latest: true
+
+      - name: fetch go modules
+        working-directory: tests
+        run: go mod download
+
+      - name: run tests
+        run: |
+          if [ "${{ inputs.test }}" = "test_extended" ]; then
+            make ${{ inputs.test }}
+          else
+            make test TF_PATH=${{ inputs.test }}
+          fi
