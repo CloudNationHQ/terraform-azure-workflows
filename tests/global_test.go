@@ -168,7 +168,8 @@ func ExtractReadmeResources(data string) ([]string, error) {
 
 func ExtractTerraformResources() ([]string, error) {
 	parser := hclparse.NewParser()
-	file, diags := parser.ParseHCLFile("../main.tf")
+	// file, diags := parser.ParseHCLFile("../main.tf")
+	file, diags := parser.ParseHCLFile("../../../caller/main.tf")
 	if diags.HasErrors() {
 		return nil, errors.New(diags.Error())
 	}
