@@ -71,7 +71,7 @@ jobs:
       - name: check out called repo
         uses: actions/checkout@v3
         with:
-          repository: aztfmods/workflows-shared
+          repository: cloudnationhq/terraform-azure-workflows
           path: called
 
       - name: setup go
