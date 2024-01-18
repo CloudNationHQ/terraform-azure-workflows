@@ -219,9 +219,15 @@ func ExtractTerraformResources() ([]string, error) {
 	return resources, nil
 }
 
-// extractRecursively traverses a directory and extracts resources from all main.tf files.
 func extractRecursively(dirPath string) ([]string, error) {
 	var resources []string
+
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		return resources, nil
+	} else if err != nil {
+		return nil, err
+	}
+
 	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
