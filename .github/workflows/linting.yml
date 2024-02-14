@@ -29,7 +29,8 @@ jobs:
     steps:
       - uses: deepakputhraya/action-branch-name@master
         with:
-          regex: '^(feat|fix)\/[a-z-]+$'
+          #regex: '^(feat|fix)\/[a-z-]+$'
+          regex: '^(feat|fix)\/[a-z0-9_-]+$'
           allowed_prefixes: 'feat,fix'
           ignore: main,develop
           min_length: 3
