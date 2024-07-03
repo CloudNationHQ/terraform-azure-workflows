@@ -90,8 +90,6 @@ jobs:
           repository: ${{ github.repository }}
           ref: ${{ github.event.pull_request.head.ref }}
           path: caller
-          fetch-depth: 0
-          fetch-tags: true
 
       #- name: check out caller repo
         #uses: actions/checkout@v4
