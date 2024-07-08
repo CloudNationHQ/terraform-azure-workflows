@@ -3,7 +3,7 @@ module github.com/cloudnationhq/terraform-azure-workflows
 go 1.20
 
 require (
-	github.com/hashicorp/hcl/v2 v2.20.1
+	github.com/hashicorp/hcl/v2 v2.21.0
 	mvdan.cc/xurls/v2 v2.5.0
 )
 
