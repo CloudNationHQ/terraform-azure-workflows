@@ -73,6 +73,7 @@ jobs:
         with:
           repository: cloudnationhq/terraform-azure-workflows
           path: called
+          token: ${{ secrets.WORKFLOW_PAT }}
 
       - name: setup go
         uses: actions/setup-go@v5
