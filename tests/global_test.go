@@ -75,12 +75,11 @@ type Data struct {
 }
 
 func NewMarkdownValidator(readmePath string) (*MarkdownValidator, error) {
-	// Use the README_PATH environment variable if it's set
+	// Use environment variable set in github workflow
 	if envPath := os.Getenv("README_PATH"); envPath != "" {
 		readmePath = envPath
 	}
 
-	// Ensure the path is absolute
 	absReadmePath, err := filepath.Abs(readmePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get absolute path: %v", err)
@@ -104,11 +103,10 @@ func NewMarkdownValidator(readmePath string) (*MarkdownValidator, error) {
 		Section{Header: "License"},
 	}
 
-	// Use filepath.Dir to get the directory of the README file
 	rootDir := filepath.Dir(absReadmePath)
 
 	files := []FileValidator{
-		RequiredFile{Name: absReadmePath}, // README.md is now the absolute path we just read
+		RequiredFile{Name: absReadmePath},
 		RequiredFile{Name: filepath.Join(rootDir, "CONTRIBUTE.md")},
 		RequiredFile{Name: filepath.Join(rootDir, "LICENSE")},
 	}
@@ -122,49 +120,6 @@ func NewMarkdownValidator(readmePath string) (*MarkdownValidator, error) {
 		tfValidator:  TerraformDefinitionValidator{},
 	}, nil
 }
-
-//func NewMarkdownValidator(readmePath string) (*MarkdownValidator, error) {
-	//testsDir, err := os.Getwd()
-	//if err != nil {
-		//return nil, fmt.Errorf("failed to get current working directory: %v", err)
-	//}
-
-	//rootDir := filepath.Dir(testsDir)
-	//absReadmePath := filepath.Join(rootDir, readmePath)
-
-	//data, err := os.ReadFile(absReadmePath)
-	//if err != nil {
-		//return nil, err
-	//}
-
-	//sections := []SectionValidator{
-		//Section{Header: "Goals"},
-		//Section{Header: "Resources", Columns: []string{"Name", "Type"}},
-		//Section{Header: "Providers", Columns: []string{"Name", "Version"}},
-		//Section{Header: "Requirements", Columns: []string{"Name", "Version"}},
-		//Section{Header: "Inputs", Columns: []string{"Name", "Description", "Type", "Default", "Required"}},
-		//Section{Header: "Outputs", Columns: []string{"Name", "Description"}},
-		//Section{Header: "Features"},
-		//Section{Header: "Testing"},
-		//Section{Header: "Authors"},
-		//Section{Header: "License"},
-	//}
-
-	//files := []FileValidator{
-		//RequiredFile{Name: filepath.Join(rootDir, "README.md")},
-		//RequiredFile{Name: filepath.Join(rootDir, "CONTRIBUTE.md")},
-		//RequiredFile{Name: filepath.Join(rootDir, "LICENSE")},
-	//}
-
-	//return &MarkdownValidator{
-		//readmePath:   absReadmePath,
-		//data:         string(data),
-		//sections:     sections,
-		//files:        files,
-		//urlValidator: StandardURLValidator{},
-		//tfValidator:  TerraformDefinitionValidator{},
-	//}, nil
-//}
 
 func (mv *MarkdownValidator) Validate() []error {
 	var allErrors []error
@@ -351,7 +306,7 @@ func extractReadmeResources(data string) ([]string, error) {
 func extractTerraformResources() ([]string, error) {
 	var resources []string
 
-	// Extract from specific main.tf
+	// make use of builtin github environment variable
 	mainPath := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller", "main.tf")
 	specificResources, err := extractFromFilePath(mainPath)
 	if err != nil {
@@ -359,7 +314,6 @@ func extractTerraformResources() ([]string, error) {
 	}
 	resources = append(resources, specificResources...)
 
-	// Recursive extraction from modules directory
 	modulesPath := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller", "modules")
 	modulesResources, err := extractRecursively(modulesPath)
 	if err != nil {
@@ -396,49 +350,6 @@ func extractRecursively(dirPath string) ([]string, error) {
 	return resources, nil
 }
 
-//func extractTerraformResources() ([]string, error) {
-	//var resources []string
-
-	//cwd, err := os.Getwd()
-	//if err != nil {
-		//return nil, fmt.Errorf("failed to get current working directory: %v", err)
-	//}
-	//rootDir := filepath.Dir(cwd)
-
-	//dirsToSearch := []string{rootDir}
-
-	//modulesDir := filepath.Join(rootDir, "modules")
-	//if _, err := os.Stat(modulesDir); !os.IsNotExist(err) {
-		//dirsToSearch = append(dirsToSearch, modulesDir)
-	//}
-
-	//for _, dir := range dirsToSearch {
-		//err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-			//if err != nil {
-				//if os.IsNotExist(err) {
-					//return nil
-				//}
-				//return err
-			//}
-			//if info.IsDir() || filepath.Ext(path) != ".tf" {
-				//return nil
-			//}
-			//fileResources, err := extractFromFilePath(path)
-			//if err != nil {
-				//return err
-			//}
-			//resources = append(resources, fileResources...)
-			//return nil
-		//})
-
-		//if err != nil {
-			//return nil, fmt.Errorf("error walking the path %q: %v", dir, err)
-		//}
-	//}
-
-	//return resources, nil
-//}
-
 func extractFromFilePath(filePath string) ([]string, error) {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
@@ -447,7 +358,7 @@ func extractFromFilePath(filePath string) ([]string, error) {
 
 	var resources []string
 
-	// Use regex to find resource and data blocks
+	// use regex to find resource and data blocks
 	resourceRegex := regexp.MustCompile(`(?m)^resource\s+"(\w+)"\s+"`)
 	dataRegex := regexp.MustCompile(`(?m)^data\s+"(\w+)"\s+"`)
 
@@ -461,30 +372,6 @@ func extractFromFilePath(filePath string) ([]string, error) {
 
 	return resources, nil
 }
-
-//func extractFromFilePath(filePath string) ([]string, error) {
-	//parser := hclparse.NewParser()
-	//file, diags := parser.ParseHCLFile(filePath)
-	//if diags.HasErrors() {
-		//return nil, errors.New(diags.Error())
-	//}
-
-	//var config TerraformConfig
-	//diags = gohcl.DecodeBody(file.Body, nil, &config)
-	//if diags.HasErrors() {
-		//return nil, errors.New(diags.Error())
-	//}
-
-	//var resources []string
-	//for _, resource := range config.Resource {
-		//resources = append(resources, resource.Type)
-	//}
-	//for _, data := range config.Data {
-		//resources = append(resources, data.Type)
-	//}
-
-	//return resources, nil
-//}
 
 func formatError(format string, args ...interface{}) error {
 	return fmt.Errorf(format, args...)
@@ -560,19 +447,3 @@ func TestMarkdown(t *testing.T) {
 		}
 	}
 }
-
-//func TestMarkdown(t *testing.T) {
-	//readmePath := os.Getenv("README_PATH")
-
-	//validator, err := NewMarkdownValidator(readmePath)
-	//if err != nil {
-		//t.Fatalf("Failed to create validator: %v", err)
-	//}
-
-	//errors := validator.Validate()
-	//if len(errors) > 0 {
-		//for _, err := range errors {
-			//t.Errorf("Validation error: %v", err)
-		//}
-	//}
-//}
