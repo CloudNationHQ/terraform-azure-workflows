@@ -352,21 +352,23 @@ func extractReadmeResources(data string) ([]string, error) {
 func extractTerraformResources() ([]string, error) {
 	var resources []string
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current working directory: %v", err)
+	// Use the README_PATH environment variable to determine the root directory
+	readmePath := os.Getenv("README_PATH")
+	if readmePath == "" {
+		return nil, fmt.Errorf("README_PATH environment variable is not set")
 	}
-	rootDir := filepath.Dir(cwd)
+
+	// Get the directory containing the README file
+	rootDir := filepath.Dir(readmePath)
 
 	dirsToSearch := []string{rootDir}
-
 	modulesDir := filepath.Join(rootDir, "modules")
 	if _, err := os.Stat(modulesDir); !os.IsNotExist(err) {
 		dirsToSearch = append(dirsToSearch, modulesDir)
 	}
 
 	for _, dir := range dirsToSearch {
-		err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				if os.IsNotExist(err) {
 					return nil
@@ -388,9 +390,51 @@ func extractTerraformResources() ([]string, error) {
 			return nil, fmt.Errorf("error walking the path %q: %v", dir, err)
 		}
 	}
-
 	return resources, nil
 }
+
+//func extractTerraformResources() ([]string, error) {
+	//var resources []string
+
+	//cwd, err := os.Getwd()
+	//if err != nil {
+		//return nil, fmt.Errorf("failed to get current working directory: %v", err)
+	//}
+	//rootDir := filepath.Dir(cwd)
+
+	//dirsToSearch := []string{rootDir}
+
+	//modulesDir := filepath.Join(rootDir, "modules")
+	//if _, err := os.Stat(modulesDir); !os.IsNotExist(err) {
+		//dirsToSearch = append(dirsToSearch, modulesDir)
+	//}
+
+	//for _, dir := range dirsToSearch {
+		//err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			//if err != nil {
+				//if os.IsNotExist(err) {
+					//return nil
+				//}
+				//return err
+			//}
+			//if info.IsDir() || filepath.Ext(path) != ".tf" {
+				//return nil
+			//}
+			//fileResources, err := extractFromFilePath(path)
+			//if err != nil {
+				//return err
+			//}
+			//resources = append(resources, fileResources...)
+			//return nil
+		//})
+
+		//if err != nil {
+			//return nil, fmt.Errorf("error walking the path %q: %v", dir, err)
+		//}
+	//}
+
+	//return resources, nil
+//}
 
 func extractFromFilePath(filePath string) ([]string, error) {
 	parser := hclparse.NewParser()
