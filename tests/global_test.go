@@ -351,21 +351,18 @@ func extractReadmeResources(data string) ([]string, error) {
 
 func extractTerraformResources() ([]string, error) {
 	var resources []string
-
-	// Use GITHUB_WORKSPACE environment variable
-	rootDir := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller")
-	if rootDir == "" {
-		return nil, fmt.Errorf("GITHUB_WORKSPACE environment variable is not set")
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current working directory: %v", err)
 	}
-
+	rootDir := filepath.Join(filepath.Dir(cwd), "caller")
 	dirsToSearch := []string{rootDir}
 	modulesDir := filepath.Join(rootDir, "modules")
 	if _, err := os.Stat(modulesDir); !os.IsNotExist(err) {
 		dirsToSearch = append(dirsToSearch, modulesDir)
 	}
-
 	for _, dir := range dirsToSearch {
-		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				if os.IsNotExist(err) {
 					return nil
@@ -377,13 +374,14 @@ func extractTerraformResources() ([]string, error) {
 			}
 			fileResources, err := extractFromFilePath(path)
 			if err != nil {
-				return err
+				fmt.Printf("Warning: Error processing file %s: %v\n", path, err)
+				return nil
 			}
 			resources = append(resources, fileResources...)
 			return nil
 		})
 		if err != nil {
-			return nil, fmt.Errorf("error walking the path %q: %v", dir, err)
+			fmt.Printf("Warning: Error walking the path %q: %v\n", dir, err)
 		}
 	}
 	return resources, nil
@@ -433,27 +431,25 @@ func extractTerraformResources() ([]string, error) {
 //}
 
 func extractFromFilePath(filePath string) ([]string, error) {
-	parser := hclparse.NewParser()
-	file, diags := parser.ParseHCLFile(filePath)
-	if diags.HasErrors() {
-		// Log the error but continue processing
-		fmt.Printf("Warning: Error parsing file %s: %v\n", filePath, diags.Error())
-		return nil, nil
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading file %s: %v", filePath, err)
 	}
-	var config TerraformConfig
-	diags = gohcl.DecodeBody(file.Body, nil, &config)
-	if diags.HasErrors() {
-		// Log the error but continue processing
-		fmt.Printf("Warning: Error decoding file %s: %v\n", filePath, diags.Error())
-		return nil, nil
-	}
+
 	var resources []string
-	for _, resource := range config.Resource {
-		resources = append(resources, resource.Type)
+
+	// Use regex to find resource and data blocks
+	resourceRegex := regexp.MustCompile(`(?m)^resource\s+"(\w+)"\s+"`)
+	dataRegex := regexp.MustCompile(`(?m)^data\s+"(\w+)"\s+"`)
+
+	for _, match := range resourceRegex.FindAllStringSubmatch(string(content), -1) {
+		resources = append(resources, match[1])
 	}
-	for _, data := range config.Data {
-		resources = append(resources, data.Type)
+
+	for _, match := range dataRegex.FindAllStringSubmatch(string(content), -1) {
+		resources = append(resources, match[1])
 	}
+
 	return resources, nil
 }
 
