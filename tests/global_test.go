@@ -12,8 +12,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/gohcl"
-	"github.com/hashicorp/hcl/v2/hclparse"
 	"mvdan.cc/xurls/v2"
 )
 
@@ -349,40 +347,51 @@ func extractReadmeResources(data string) ([]string, error) {
 	return resources, nil
 }
 
+
 func extractTerraformResources() ([]string, error) {
 	var resources []string
-	cwd, err := os.Getwd()
+
+	// Extract from specific main.tf
+	mainPath := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller", "main.tf")
+	specificResources, err := extractFromFilePath(mainPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current working directory: %v", err)
+		return nil, err
 	}
-	rootDir := filepath.Join(filepath.Dir(cwd), "caller")
-	dirsToSearch := []string{rootDir}
-	modulesDir := filepath.Join(rootDir, "modules")
-	if _, err := os.Stat(modulesDir); !os.IsNotExist(err) {
-		dirsToSearch = append(dirsToSearch, modulesDir)
+	resources = append(resources, specificResources...)
+
+	// Recursive extraction from modules directory
+	modulesPath := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller", "modules")
+	modulesResources, err := extractRecursively(modulesPath)
+	if err != nil {
+		return nil, err
 	}
-	for _, dir := range dirsToSearch {
-		err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				if os.IsNotExist(err) {
-					return nil
-				}
-				return err
-			}
-			if info.IsDir() || filepath.Ext(path) != ".tf" {
-				return nil
-			}
+	resources = append(resources, modulesResources...)
+
+	return resources, nil
+}
+
+func extractRecursively(dirPath string) ([]string, error) {
+	var resources []string
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		return resources, nil
+	} else if err != nil {
+		return nil, err
+	}
+	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.Mode().IsRegular() && filepath.Base(path) == "main.tf" {
 			fileResources, err := extractFromFilePath(path)
 			if err != nil {
-				fmt.Printf("Warning: Error processing file %s: %v\n", path, err)
-				return nil
+				return err
 			}
 			resources = append(resources, fileResources...)
-			return nil
-		})
-		if err != nil {
-			fmt.Printf("Warning: Error walking the path %q: %v\n", dir, err)
 		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return resources, nil
 }
