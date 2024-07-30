@@ -352,14 +352,11 @@ func extractReadmeResources(data string) ([]string, error) {
 func extractTerraformResources() ([]string, error) {
 	var resources []string
 
-	// Use the README_PATH environment variable to determine the root directory
-	readmePath := os.Getenv("README_PATH")
-	if readmePath == "" {
-		return nil, fmt.Errorf("README_PATH environment variable is not set")
+	// Use GITHUB_WORKSPACE environment variable
+	rootDir := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller")
+	if rootDir == "" {
+		return nil, fmt.Errorf("GITHUB_WORKSPACE environment variable is not set")
 	}
-
-	// Get the directory containing the README file
-	rootDir := filepath.Dir(readmePath)
 
 	dirsToSearch := []string{rootDir}
 	modulesDir := filepath.Join(rootDir, "modules")
@@ -385,7 +382,6 @@ func extractTerraformResources() ([]string, error) {
 			resources = append(resources, fileResources...)
 			return nil
 		})
-
 		if err != nil {
 			return nil, fmt.Errorf("error walking the path %q: %v", dir, err)
 		}
@@ -440,15 +436,17 @@ func extractFromFilePath(filePath string) ([]string, error) {
 	parser := hclparse.NewParser()
 	file, diags := parser.ParseHCLFile(filePath)
 	if diags.HasErrors() {
-		return nil, errors.New(diags.Error())
+		// Log the error but continue processing
+		fmt.Printf("Warning: Error parsing file %s: %v\n", filePath, diags.Error())
+		return nil, nil
 	}
-
 	var config TerraformConfig
 	diags = gohcl.DecodeBody(file.Body, nil, &config)
 	if diags.HasErrors() {
-		return nil, errors.New(diags.Error())
+		// Log the error but continue processing
+		fmt.Printf("Warning: Error decoding file %s: %v\n", filePath, diags.Error())
+		return nil, nil
 	}
-
 	var resources []string
 	for _, resource := range config.Resource {
 		resources = append(resources, resource.Type)
@@ -456,9 +454,32 @@ func extractFromFilePath(filePath string) ([]string, error) {
 	for _, data := range config.Data {
 		resources = append(resources, data.Type)
 	}
-
 	return resources, nil
 }
+
+//func extractFromFilePath(filePath string) ([]string, error) {
+	//parser := hclparse.NewParser()
+	//file, diags := parser.ParseHCLFile(filePath)
+	//if diags.HasErrors() {
+		//return nil, errors.New(diags.Error())
+	//}
+
+	//var config TerraformConfig
+	//diags = gohcl.DecodeBody(file.Body, nil, &config)
+	//if diags.HasErrors() {
+		//return nil, errors.New(diags.Error())
+	//}
+
+	//var resources []string
+	//for _, resource := range config.Resource {
+		//resources = append(resources, resource.Type)
+	//}
+	//for _, data := range config.Data {
+		//resources = append(resources, data.Type)
+	//}
+
+	//return resources, nil
+//}
 
 func formatError(format string, args ...interface{}) error {
 	return fmt.Errorf(format, args...)
