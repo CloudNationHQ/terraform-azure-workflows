@@ -96,7 +96,7 @@ func NewMarkdownValidator(readmePath string) (*MarkdownValidator, error) {
 		Section{Header: "Resources", Columns: []string{"Name", "Type"}},
 		Section{Header: "Providers", Columns: []string{"Name", "Version"}},
 		Section{Header: "Requirements", Columns: []string{"Name", "Version"}},
-		Section{Header: "Inputs", Columns: []string{"Name", "Description", "Type", "Default", "Required"}},
+		Section{Header: "Inputs", Columns: []string{"Name", "Description", "Type", "Required"}},
 		Section{Header: "Outputs", Columns: []string{"Name", "Description"}},
 		Section{Header: "Features"},
 		Section{Header: "Testing"},
