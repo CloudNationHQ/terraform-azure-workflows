@@ -95,4 +95,6 @@ jobs:
         working-directory: called/tests
         run: go test -v ./...
         env:
-          README_PATH: "${{ github.workspace }}/caller/README.md"
+          README_PATH: "./caller/README.md"
+          #README_PATH: "${{ github.workspace }}/caller/README.md"
+
