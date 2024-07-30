@@ -77,17 +77,20 @@ type Data struct {
 }
 
 func NewMarkdownValidator(readmePath string) (*MarkdownValidator, error) {
-	testsDir, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current working directory: %v", err)
+	// Use the README_PATH environment variable if it's set
+	if envPath := os.Getenv("README_PATH"); envPath != "" {
+		readmePath = envPath
 	}
 
-	rootDir := filepath.Dir(testsDir)
-	absReadmePath := filepath.Join(rootDir, readmePath)
+	// Ensure the path is absolute
+	absReadmePath, err := filepath.Abs(readmePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get absolute path: %v", err)
+	}
 
 	data, err := os.ReadFile(absReadmePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read file: %v", err)
 	}
 
 	sections := []SectionValidator{
@@ -103,8 +106,11 @@ func NewMarkdownValidator(readmePath string) (*MarkdownValidator, error) {
 		Section{Header: "License"},
 	}
 
+	// Use filepath.Dir to get the directory of the README file
+	rootDir := filepath.Dir(absReadmePath)
+
 	files := []FileValidator{
-		RequiredFile{Name: filepath.Join(rootDir, "README.md")},
+		RequiredFile{Name: absReadmePath}, // README.md is now the absolute path we just read
 		RequiredFile{Name: filepath.Join(rootDir, "CONTRIBUTE.md")},
 		RequiredFile{Name: filepath.Join(rootDir, "LICENSE")},
 	}
@@ -118,6 +124,49 @@ func NewMarkdownValidator(readmePath string) (*MarkdownValidator, error) {
 		tfValidator:  TerraformDefinitionValidator{},
 	}, nil
 }
+
+//func NewMarkdownValidator(readmePath string) (*MarkdownValidator, error) {
+	//testsDir, err := os.Getwd()
+	//if err != nil {
+		//return nil, fmt.Errorf("failed to get current working directory: %v", err)
+	//}
+
+	//rootDir := filepath.Dir(testsDir)
+	//absReadmePath := filepath.Join(rootDir, readmePath)
+
+	//data, err := os.ReadFile(absReadmePath)
+	//if err != nil {
+		//return nil, err
+	//}
+
+	//sections := []SectionValidator{
+		//Section{Header: "Goals"},
+		//Section{Header: "Resources", Columns: []string{"Name", "Type"}},
+		//Section{Header: "Providers", Columns: []string{"Name", "Version"}},
+		//Section{Header: "Requirements", Columns: []string{"Name", "Version"}},
+		//Section{Header: "Inputs", Columns: []string{"Name", "Description", "Type", "Default", "Required"}},
+		//Section{Header: "Outputs", Columns: []string{"Name", "Description"}},
+		//Section{Header: "Features"},
+		//Section{Header: "Testing"},
+		//Section{Header: "Authors"},
+		//Section{Header: "License"},
+	//}
+
+	//files := []FileValidator{
+		//RequiredFile{Name: filepath.Join(rootDir, "README.md")},
+		//RequiredFile{Name: filepath.Join(rootDir, "CONTRIBUTE.md")},
+		//RequiredFile{Name: filepath.Join(rootDir, "LICENSE")},
+	//}
+
+	//return &MarkdownValidator{
+		//readmePath:   absReadmePath,
+		//data:         string(data),
+		//sections:     sections,
+		//files:        files,
+		//urlValidator: StandardURLValidator{},
+		//tfValidator:  TerraformDefinitionValidator{},
+	//}, nil
+//}
 
 func (mv *MarkdownValidator) Validate() []error {
 	var allErrors []error
@@ -424,7 +473,10 @@ func compareColumns(header string, expected, actual []string) error {
 }
 
 func TestMarkdown(t *testing.T) {
-	readmePath := os.Getenv("README_PATH")
+	readmePath := "README.md"
+	if envPath := os.Getenv("README_PATH"); envPath != "" {
+		readmePath = envPath
+	}
 
 	validator, err := NewMarkdownValidator(readmePath)
 	if err != nil {
@@ -438,3 +490,19 @@ func TestMarkdown(t *testing.T) {
 		}
 	}
 }
+
+//func TestMarkdown(t *testing.T) {
+	//readmePath := os.Getenv("README_PATH")
+
+	//validator, err := NewMarkdownValidator(readmePath)
+	//if err != nil {
+		//t.Fatalf("Failed to create validator: %v", err)
+	//}
+
+	//errors := validator.Validate()
+	//if len(errors) > 0 {
+		//for _, err := range errors {
+			//t.Errorf("Validation error: %v", err)
+		//}
+	//}
+//}
