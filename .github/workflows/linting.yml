@@ -2,6 +2,9 @@ name: "linting"
 
 on:
   workflow_call:
+    secrets:
+      WORKFLOW_PAT:
+        required: true
 
 permissions:
   pull-requests: read
