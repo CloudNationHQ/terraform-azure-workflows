@@ -3,13 +3,12 @@ name: "linting"
 on:
   workflow_call:
 
-if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
-
 permissions:
   pull-requests: read
 
 jobs:
   validate-pr-title:
+    if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
     name: pr commit
     runs-on: ubuntu-latest
     steps:
@@ -26,6 +25,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   branch-naming-rules:
+    if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
     name: branch name prefix
     runs-on: ubuntu-latest
     steps:
@@ -38,6 +38,7 @@ jobs:
           max_length: 60
 
   run-tflint:
+    if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
     name: linting
     runs-on: ubuntu-latest
     steps:
@@ -67,6 +68,7 @@ jobs:
         continue-on-error: false
 
   tests:
+    if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
     name: global tests
     runs-on: ubuntu-latest
     steps:
