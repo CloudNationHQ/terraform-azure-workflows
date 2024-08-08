@@ -1,14 +1,24 @@
 name: "linting"
-
 on:
   workflow_call:
 
-permissions:
-  pull-requests: read
-
 jobs:
+  check_for_skip:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.check_labels.outputs.should_skip }}
+    steps:
+      - id: check_labels
+        run: |
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'autorelease') }}" == "true" ]]; then
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_skip=false" >> $GITHUB_OUTPUT
+          fi
+
   validate-pr-title:
-    if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
+    needs: check_for_skip
+    if: needs.check_for_skip.outputs.should_skip != 'true'
     name: pr commit
     runs-on: ubuntu-latest
     steps:
@@ -25,7 +35,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   branch-naming-rules:
-    if: "!contains(github.event.pull_request.labels.*.name, 'autorelease: tagged')"
+    needs: check_for_skip
+    if: needs.check_for_skip.outputs.should_skip != 'true'
     name: branch name prefix
     runs-on: ubuntu-latest
     steps:
@@ -38,37 +49,33 @@ jobs:
           max_length: 60
 
   run-tflint:
-    if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
+    needs: check_for_skip
+    if: needs.check_for_skip.outputs.should_skip != 'true'
     name: linting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: terraform-linters/setup-tflint@v4
         name: Setup TFLint
         with:
           tflint_version: v0.47.0
-
       - name: Run TFLint
         run: tflint
-
       - name: setup terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
-
       - name: terraform init
         run: terraform init
-
       - name: terraform validate
         run: terraform validate
-
       - name: terraform fmt
         run: terraform fmt -check -recursive
         continue-on-error: false
 
   tests:
-    if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
+    needs: check_for_skip
+    if: needs.check_for_skip.outputs.should_skip != 'true'
     name: global tests
     runs-on: ubuntu-latest
     steps:
@@ -77,27 +84,126 @@ jobs:
         with:
           repository: cloudnationhq/terraform-azure-workflows
           path: called
-
       - name: setup go
         uses: actions/setup-go@v5
         with:
           check-latest: true
-
       - name: fetch go modules
         working-directory: called/tests
         run: go mod download
-
       - name: check out caller repo
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }} # should be able to handle forked PRs, because of the branch prefix
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
           path: caller
           fetch-depth: 0
-
       - name: run global tests
         working-directory: called/tests
         run: go test -v ./...
         env:
           README_PATH: "${{ github.workspace }}/caller/README.md"
+
+#name: "linting"
+
+#on:
+  #workflow_call:
+
+#permissions:
+  #pull-requests: read
+
+#jobs:
+  #validate-pr-title:
+    #if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
+    #name: pr commit
+    #runs-on: ubuntu-latest
+    #steps:
+      #- uses: amannn/action-semantic-pull-request@v5
+        #with:
+          #types: |
+            #fix
+            #feat
+            #chore
+          #ignoreLabels: |
+            #autorelease
+            #dependencies
+        #env:
+          #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  #branch-naming-rules:
+    #if: "!contains(github.event.pull_request.labels.*.name, 'autorelease: tagged')"
+    #name: branch name prefix
+    #runs-on: ubuntu-latest
+    #steps:
+      #- uses: deepakputhraya/action-branch-name@master
+        #with:
+          #regex: '^(feat|fix)\/[a-z0-9_-]+$'
+          #allowed_prefixes: 'feat,fix'
+          #ignore: main,develop
+          #min_length: 3
+          #max_length: 60
+
+  #run-tflint:
+    #if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
+    #name: linting
+    #runs-on: ubuntu-latest
+    #steps:
+      #- uses: actions/checkout@v4
+
+      #- uses: terraform-linters/setup-tflint@v4
+        #name: Setup TFLint
+        #with:
+          #tflint_version: v0.47.0
+
+      #- name: Run TFLint
+        #run: tflint
+
+      #- name: setup terraform
+        #uses: hashicorp/setup-terraform@v3
+        #with:
+          #terraform_wrapper: false
+
+      #- name: terraform init
+        #run: terraform init
+
+      #- name: terraform validate
+        #run: terraform validate
+
+      #- name: terraform fmt
+        #run: terraform fmt -check -recursive
+        #continue-on-error: false
+
+  #tests:
+    #if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
+    #name: global tests
+    #runs-on: ubuntu-latest
+    #steps:
+      #- name: check out called repo
+        #uses: actions/checkout@v4
+        #with:
+          #repository: cloudnationhq/terraform-azure-workflows
+          #path: called
+
+      #- name: setup go
+        #uses: actions/setup-go@v5
+        #with:
+          #check-latest: true
+
+      #- name: fetch go modules
+        #working-directory: called/tests
+        #run: go mod download
+
+      #- name: check out caller repo
+        #uses: actions/checkout@v4
+        #with:
+          #repository: ${{ github.event.pull_request.head.repo.full_name }} # should be able to handle forked PRs, because of the branch prefix
+          #ref: ${{ github.event.pull_request.head.sha }}
+          #path: caller
+          #fetch-depth: 0
+
+      #- name: run global tests
+        #working-directory: called/tests
+        #run: go test -v ./...
+        #env:
+          #README_PATH: "${{ github.workspace }}/caller/README.md"
 
