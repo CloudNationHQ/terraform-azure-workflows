@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   validate-pr-title:
-    if: "!contains(github.event.pull_request.labels.*.name, 'autorelease: tagged')"
+    if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
     name: pr commit
     runs-on: ubuntu-latest
     steps:
@@ -38,7 +38,7 @@ jobs:
           max_length: 60
 
   run-tflint:
-    if: "!contains(github.event.pull_request.labels.*.name, 'autorelease: tagged')"
+    if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
     name: linting
     runs-on: ubuntu-latest
     steps:
@@ -68,7 +68,7 @@ jobs:
         continue-on-error: false
 
   tests:
-    if: "!contains(github.event.pull_request.labels.*.name, 'autorelease: tagged')"
+    if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'autorelease') }}
     name: global tests
     runs-on: ubuntu-latest
     steps:
