@@ -10,7 +10,7 @@ jobs:
   validate-pr-title:
     name: pr commit
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]' }}
+    if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.user.login != 'release-please[bot]' }}
     #if: ${{ (github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]') || github.event.action == 'opened' }}
     steps:
       - uses: amannn/action-semantic-pull-request@v5
@@ -28,7 +28,7 @@ jobs:
   branch-naming-rules:
     name: branch name prefix
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]' }}
+    if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.user.login != 'release-please[bot]' }}
     #if: ${{ (github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]') || github.event.action == 'opened' }}
     steps:
       - uses: deepakputhraya/action-branch-name@master
@@ -42,7 +42,7 @@ jobs:
   run-tflint:
     name: linting
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]' }}
+    if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.user.login != 'release-please[bot]' }}
     #if: ${{ (github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]') || github.event.action == 'opened' }}
     steps:
       - uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
   tests:
     name: global tests
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]' }}
+    if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.user.login != 'release-please[bot]' }}
     #if: ${{ (github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]') || github.event.action == 'opened' }}
     steps:
       - name: check out called repo
