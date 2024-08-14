@@ -242,74 +242,36 @@ func (mv *MarkdownValidator) ValidateURLs() []error {
 }
 
 func (suv StandardURLValidator) ValidateURLs(data string) []error {
-    rxStrict := xurls.Strict()
-    urls := rxStrict.FindAllString(data, -1)
+	rxStrict := xurls.Strict()
+	urls := rxStrict.FindAllString(data, -1)
 
-    // Get the current branch name from environment variable
-    branch := os.Getenv("GITHUB_HEAD_REF")
-    if branch == "" {
-        branch = "main" // default to main if not found
-    }
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(urls))
 
-    var wg sync.WaitGroup
-    errChan := make(chan error, len(urls))
-    for _, u := range urls {
-        if strings.Contains(u, "registry.terraform.io/providers/") {
-            continue
-        }
+	for _, u := range urls {
+		if strings.Contains(u, "registry.terraform.io/providers/") {
+			continue
+		}
 
-        // Replace main branch in URL with the current branch
-        u = strings.Replace(u, "/main/", "/"+branch+"/", 1)
+		wg.Add(1)
+		go func(url string) {
+			defer wg.Done()
+			if err := suv.validateSingleURL(url); err != nil {
+				errChan <- err
+			}
+		}(u)
+	}
 
-        wg.Add(1)
-        go func(url string) {
-            defer wg.Done()
-            if err := suv.validateSingleURL(url); err != nil {
-                errChan <- err
-            }
-        }(u)
-    }
-    wg.Wait()
-    close(errChan)
-    var errors []error
-    for err := range errChan {
-        errors = append(errors, err)
-    }
-    return errors
+	wg.Wait()
+	close(errChan)
+
+	var errors []error
+	for err := range errChan {
+		errors = append(errors, err)
+	}
+
+	return errors
 }
-
-
-//func (suv StandardURLValidator) ValidateURLs(data string) []error {
-	//rxStrict := xurls.Strict()
-	//urls := rxStrict.FindAllString(data, -1)
-
-	//var wg sync.WaitGroup
-	//errChan := make(chan error, len(urls))
-
-	//for _, u := range urls {
-		//if strings.Contains(u, "registry.terraform.io/providers/") {
-			//continue
-		//}
-
-		//wg.Add(1)
-		//go func(url string) {
-			//defer wg.Done()
-			//if err := suv.validateSingleURL(url); err != nil {
-				//errChan <- err
-			//}
-		//}(u)
-	//}
-
-	//wg.Wait()
-	//close(errChan)
-
-	//var errors []error
-	//for err := range errChan {
-		//errors = append(errors, err)
-	//}
-
-	//return errors
-//}
 
 func (suv StandardURLValidator) validateSingleURL(url string) error {
 	resp, err := http.Get(url)
