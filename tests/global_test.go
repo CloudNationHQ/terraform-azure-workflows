@@ -430,24 +430,45 @@ func extractMarkdownOutputs(data string) ([]string, error) {
 }
 
 func extractReadmeResources(data string) ([]string, error) {
-	var resources []string
-	resourcesPattern := regexp.MustCompile(`(?s)## Resources.*?\n(.*?)\n##`)
-	resourcesSection := resourcesPattern.FindStringSubmatch(data)
-	if len(resourcesSection) < 2 {
-		return nil, errors.New("resources section not found or empty")
-	}
+    var resources []string
+    resourcesPattern := regexp.MustCompile(`(?s)## Resources.*?\n(.*?)\n##`)
+    resourcesSection := resourcesPattern.FindStringSubmatch(data)
+    if len(resourcesSection) < 2 {
+        return nil, errors.New("resources section not found or empty")
+    }
 
-	linePattern := regexp.MustCompile(`\| \[([^\]]+)\]\([^\)]+\) \| [^\|]+\|`)
-	matches := linePattern.FindAllStringSubmatch(resourcesSection[1], -1)
+    // Updated regex to handle resources with or without trailing spaces
+    linePattern := regexp.MustCompile(`\|\s*\[([^\]]+)\].*\|\s*resource\s*\|`)
+    matches := linePattern.FindAllStringSubmatch(resourcesSection[1], -1)
 
-	for _, match := range matches {
-		if len(match) > 1 {
-			resources = append(resources, strings.TrimSpace(match[1]))
-		}
-	}
+    for _, match := range matches {
+        if len(match) > 1 {
+            resources = append(resources, strings.TrimSpace(match[1]))
+        }
+    }
 
-	return resources, nil
+    return resources, nil
 }
+
+//func extractReadmeResources(data string) ([]string, error) {
+	//var resources []string
+	//resourcesPattern := regexp.MustCompile(`(?s)## Resources.*?\n(.*?)\n##`)
+	//resourcesSection := resourcesPattern.FindStringSubmatch(data)
+	//if len(resourcesSection) < 2 {
+		//return nil, errors.New("resources section not found or empty")
+	//}
+
+	//linePattern := regexp.MustCompile(`\| \[([^\]]+)\]\([^\)]+\) \| [^\|]+\|`)
+	//matches := linePattern.FindAllStringSubmatch(resourcesSection[1], -1)
+
+	//for _, match := range matches {
+		//if len(match) > 1 {
+			//resources = append(resources, strings.TrimSpace(match[1]))
+		//}
+	//}
+
+	//return resources, nil
+//}
 
 func extractTerraformResources() ([]string, error) {
 	var resources []string
@@ -610,62 +631,20 @@ func compareTerraformAndMarkdown(tfItems, mdItems []string, itemType string) []e
 }
 
 func TestMarkdown(t *testing.T) {
-    readmePath := "README.md"
-    if envPath := os.Getenv("README_PATH"); envPath != "" {
-        readmePath = envPath
-    }
+	readmePath := "README.md"
+	if envPath := os.Getenv("README_PATH"); envPath != "" {
+		readmePath = envPath
+	}
 
-    validator, err := NewMarkdownValidator(readmePath)
-    if err != nil {
-        t.Fatalf("Failed to create validator: %v", err)
-    }
+	validator, err := NewMarkdownValidator(readmePath)
+	if err != nil {
+		t.Fatalf("Failed to create validator: %v", err)
+	}
 
-    // Log the content of the README file
-    t.Logf("README content:\n%s", validator.data)
-
-    // Extract and log resources from README
-    readmeResources, err := extractReadmeResources(validator.data)
-    if err != nil {
-        t.Fatalf("Failed to extract README resources: %v", err)
-    }
-    t.Logf("Resources extracted from README: %v", readmeResources)
-
-    // Extract and log resources from Terraform files
-    tfResources, err := extractTerraformResources()
-    if err != nil {
-        t.Fatalf("Failed to extract Terraform resources: %v", err)
-    }
-    t.Logf("Resources extracted from Terraform files: %v", tfResources)
-
-    // Log the comparison results
-    missingInMarkdown := findMissingItems(tfResources, readmeResources)
-    missingInTerraform := findMissingItems(readmeResources, tfResources)
-    t.Logf("Resources missing in markdown: %v", missingInMarkdown)
-    t.Logf("Resources in markdown but missing in Terraform: %v", missingInTerraform)
-
-    errors := validator.Validate()
-    if len(errors) > 0 {
-        for _, err := range errors {
-            t.Errorf("Validation error: %v", err)
-        }
-    }
+	errors := validator.Validate()
+	if len(errors) > 0 {
+		for _, err := range errors {
+			t.Errorf("Validation error: %v", err)
+		}
+	}
 }
-
-//func TestMarkdown(t *testing.T) {
-	//readmePath := "README.md"
-	//if envPath := os.Getenv("README_PATH"); envPath != "" {
-		//readmePath = envPath
-	//}
-
-	//validator, err := NewMarkdownValidator(readmePath)
-	//if err != nil {
-		//t.Fatalf("Failed to create validator: %v", err)
-	//}
-
-	//errors := validator.Validate()
-	//if len(errors) > 0 {
-		//for _, err := range errors {
-			//t.Errorf("Validation error: %v", err)
-		//}
-	//}
-//}
