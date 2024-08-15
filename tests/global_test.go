@@ -309,20 +309,6 @@ func (tdv TerraformDefinitionValidator) ValidateTerraformDefinitions(data string
 	return errors
 }
 
-//func (tdv TerraformDefinitionValidator) ValidateTerraformDefinitions(data string) []error {
-//tfResources, err := extractTerraformResources()
-//if err != nil {
-//return []error{err}
-//}
-
-//readmeResources, err := extractReadmeResources(data)
-//if err != nil {
-//return []error{err}
-//}
-
-//return compareTerraformAndMarkdown(tfResources, readmeResources, "Resources")
-//}
-
 func (mv *MarkdownValidator) ValidateVariables() []error {
 	return mv.variableValidator.ValidateVariables(mv.data)
 }
@@ -472,47 +458,6 @@ func extractReadmeResources(data string) ([]string, []string, error) {
 	return resources, dataSources, nil
 }
 
-//func extractReadmeResources(data string) ([]string, error) {
-//var resources []string
-//resourcesPattern := regexp.MustCompile(`(?s)## Resources.*?\n(.*?)\n##`)
-//resourcesSection := resourcesPattern.FindStringSubmatch(data)
-//if len(resourcesSection) < 2 {
-//return nil, errors.New("resources section not found or empty")
-//}
-
-//// Updated regex to handle resources with or without trailing spaces
-//linePattern := regexp.MustCompile(`\|\s*\[([^\]]+)\].*\|\s*resource\s*\|`)
-//matches := linePattern.FindAllStringSubmatch(resourcesSection[1], -1)
-
-//for _, match := range matches {
-//if len(match) > 1 {
-//resources = append(resources, strings.TrimSpace(match[1]))
-//}
-//}
-
-//return resources, nil
-//}
-
-//func extractReadmeResources(data string) ([]string, error) {
-//var resources []string
-//resourcesPattern := regexp.MustCompile(`(?s)## Resources.*?\n(.*?)\n##`)
-//resourcesSection := resourcesPattern.FindStringSubmatch(data)
-//if len(resourcesSection) < 2 {
-//return nil, errors.New("resources section not found or empty")
-//}
-
-//linePattern := regexp.MustCompile(`\| \[([^\]]+)\]\([^\)]+\) \| [^\|]+\|`)
-//matches := linePattern.FindAllStringSubmatch(resourcesSection[1], -1)
-
-//for _, match := range matches {
-//if len(match) > 1 {
-//resources = append(resources, strings.TrimSpace(match[1]))
-//}
-//}
-
-//return resources, nil
-//}
-
 func extractTerraformResources() ([]string, []string, error) {
 	var resources []string
 	var dataSources []string
@@ -535,26 +480,6 @@ func extractTerraformResources() ([]string, []string, error) {
 
 	return resources, dataSources, nil
 }
-
-//func extractTerraformResources() ([]string, error) {
-//var resources []string
-
-//mainPath := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller", "main.tf")
-//specificResources, err := extractFromFilePath(mainPath)
-//if err != nil {
-//return nil, err
-//}
-//resources = append(resources, specificResources...)
-
-//modulesPath := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller", "modules")
-//modulesResources, err := extractRecursively(modulesPath)
-//if err != nil {
-//return nil, err
-//}
-//resources = append(resources, modulesResources...)
-
-//return resources, nil
-//}
 
 func extractRecursively(dirPath string) ([]string, []string, error) {
 	var resources []string
@@ -584,32 +509,6 @@ func extractRecursively(dirPath string) ([]string, []string, error) {
 	return resources, dataSources, nil
 }
 
-//func extractRecursively(dirPath string) ([]string, error) {
-//var resources []string
-//if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-//return resources, nil
-//} else if err != nil {
-//return nil, err
-//}
-//err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
-//if err != nil {
-//return err
-//}
-//if info.Mode().IsRegular() && filepath.Base(path) == "main.tf" {
-//fileResources, err := extractFromFilePath(path)
-//if err != nil {
-//return err
-//}
-//resources = append(resources, fileResources...)
-//}
-//return nil
-//})
-//if err != nil {
-//return nil, err
-//}
-//return resources, nil
-//}
-
 func extractFromFilePath(filePath string) ([]string, []string, error) {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
@@ -632,28 +531,6 @@ func extractFromFilePath(filePath string) ([]string, []string, error) {
 
 	return resources, dataSources, nil
 }
-
-//func extractFromFilePath(filePath string) ([]string, error) {
-//content, err := os.ReadFile(filePath)
-//if err != nil {
-//return nil, fmt.Errorf("error reading file %s: %v", filePath, err)
-//}
-
-//var resources []string
-
-//resourceRegex := regexp.MustCompile(`(?m)^resource\s+"(\w+)"\s+"`)
-//dataRegex := regexp.MustCompile(`(?m)^data\s+"(\w+)"\s+"`)
-
-//for _, match := range resourceRegex.FindAllStringSubmatch(string(content), -1) {
-//resources = append(resources, match[1])
-//}
-
-//for _, match := range dataRegex.FindAllStringSubmatch(string(content), -1) {
-//resources = append(resources, match[1])
-//}
-
-//return resources, nil
-//}
 
 func formatError(format string, args ...interface{}) error {
 	return fmt.Errorf(format, args...)
