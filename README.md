@@ -8,6 +8,16 @@ Beyond their individual functionalities, these workflows collectively serve a bi
 
 In doing so, they significantly enhance our operational efficiency, reduce manual error, and ensure that our development practices align with industry standards.
 
-## Contributing
-We welcome contributions to this repository. Whether it's reporting a bug, proposing a new feature, or submitting a pull request, your contribution is greatly appreciated.
+## Authors
 
+Module is maintained by [these awesome contributors](https://github.com/cloudnationhq/terraform-azure-workflows/graphs/contributors).
+
+## Contributing
+
+We welcome contributions from the community! Whether it's reporting a bug, suggesting a new feature, or submitting a pull request, your input is highly valued.
+
+For more information, please see our contribution [guidelines](./CONTRIBUTING.md).
+
+## License
+
+MIT Licensed. See [LICENSE](./LICENSE) for full details.
