@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.0.0...v1.1.0) (2024-09-16)
+
+
+### Features
+
+* replaced regex with a markdown parser for better accuracy and maintainability ([#28](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/28)) ([e080cc6](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/e080cc6da79ad7ed9e19357cb78b886b2269d179))
+
 ## 1.0.0 (2024-08-28)
 
 
