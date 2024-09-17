@@ -779,11 +779,14 @@ func extractFromFilePath(filePath string) ([]string, []string, error) {
         Blocks: []hcl.BlockHeaderSchema{
             {Type: "resource", LabelNames: []string{"type", "name"}},
             {Type: "data", LabelNames: []string{"type", "name"}},
+            {Type: "terraform", LabelNames: []string{}},
+            {Type: "variable", LabelNames: []string{"name"}},
+            {Type: "output", LabelNames: []string{"name"}},
         },
     })
+
     if diags.HasErrors() {
-        // Log the diagnostics but continue processing
-        fmt.Printf("Diagnostics when processing %s: %v\n", filePath, diags)
+        fmt.Printf("Non-fatal diagnostics when processing %s: %v\n", filePath, diags)
     }
 
     for _, block := range hclContent.Blocks {
