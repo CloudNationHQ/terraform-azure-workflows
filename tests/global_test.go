@@ -645,96 +645,159 @@ func extractTextFromNodes(nodes []ast.Node) string {
 
 // extractTerraformResources extracts resources and data sources from Terraform files
 func extractTerraformResources() ([]string, []string, error) {
-	var resources []string
-	var dataSources []string
+    var resources []string
+    var dataSources []string
 
-	mainPath := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller", "main.tf")
-	specificResources, specificDataSources, err := extractFromFilePath(mainPath)
-	if err != nil {
-		return nil, nil, err
-	}
-	resources = append(resources, specificResources...)
-	dataSources = append(dataSources, specificDataSources...)
+    mainPath := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller", "main.tf")
+    specificResources, specificDataSources, err := extractFromFilePath(mainPath)
+    if err != nil {
+        fmt.Printf("Error processing main.tf: %v\n", err)
+    } else {
+        resources = append(resources, specificResources...)
+        dataSources = append(dataSources, specificDataSources...)
+    }
 
-	modulesPath := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller", "modules")
-	modulesResources, modulesDataSources, err := extractRecursively(modulesPath)
-	if err != nil {
-		return nil, nil, err
-	}
-	resources = append(resources, modulesResources...)
-	dataSources = append(dataSources, modulesDataSources...)
+    rootReadmePath := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller", "README.md")
+    content, err := os.ReadFile(rootReadmePath)
+    if err != nil {
+        fmt.Printf("Error reading root README.md: %v\n", err)
+    } else {
+        readmeResources, readmeDataSources, err := extractReadmeResources(string(content))
+        if err != nil {
+            fmt.Printf("Error processing root README.md: %v\n", err)
+        } else {
+            resources = append(resources, readmeResources...)
+            dataSources = append(dataSources, readmeDataSources...)
+        }
+    }
 
-	return resources, dataSources, nil
+    modulesPath := filepath.Join(os.Getenv("GITHUB_WORKSPACE"), "caller", "modules")
+    modulesResources, modulesDataSources, err := extractRecursively(modulesPath)
+    if err != nil {
+        fmt.Printf("Error processing modules: %v\n", err)
+    } else {
+        resources = append(resources, modulesResources...)
+        dataSources = append(dataSources, modulesDataSources...)
+    }
+
+    return resources, dataSources, nil
 }
 
 // extractRecursively extracts resources and data sources recursively
 func extractRecursively(dirPath string) ([]string, []string, error) {
-	var resources []string
-	var dataSources []string
-	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-		return resources, dataSources, nil
-	} else if err != nil {
-		return nil, nil, err
-	}
-	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.Mode().IsRegular() && filepath.Ext(path) == ".tf" {
-			fileResources, fileDataSources, err := extractFromFilePath(path)
-			if err != nil {
-				return err
-			}
-			resources = append(resources, fileResources...)
-			dataSources = append(dataSources, fileDataSources...)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	return resources, dataSources, nil
+    var resources []string
+    var dataSources []string
+    if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+        return resources, dataSources, nil
+    } else if err != nil {
+        return nil, nil, err
+    }
+    err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+        if err != nil {
+            return err
+        }
+        if info.Mode().IsRegular() {
+            switch filepath.Ext(path) {
+            case ".tf":
+                fileResources, fileDataSources, err := extractFromFilePath(path)
+                if err != nil {
+                    fmt.Printf("Error processing %s: %v\n", path, err)
+                    return nil // Continue processing other files
+                }
+                resources = append(resources, fileResources...)
+                dataSources = append(dataSources, fileDataSources...)
+            case ".md":
+                if filepath.Base(path) == "README.md" {
+                    content, err := os.ReadFile(path)
+                    if err != nil {
+                        fmt.Printf("Error reading %s: %v\n", path, err)
+                        return nil // Continue processing other files
+                    }
+                    mdResources, mdDataSources, err := extractReadmeResources(string(content))
+                    if err != nil {
+                        fmt.Printf("Error processing %s: %v\n", path, err)
+                        return nil // Continue processing other files
+                    }
+                    resources = append(resources, mdResources...)
+                    dataSources = append(dataSources, mdDataSources...)
+                }
+            }
+        }
+        return nil
+    })
+    if err != nil {
+        return nil, nil, err
+    }
+    return resources, dataSources, nil
 }
+//func extractRecursively(dirPath string) ([]string, []string, error) {
+	//var resources []string
+	//var dataSources []string
+	//if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		//return resources, dataSources, nil
+	//} else if err != nil {
+		//return nil, nil, err
+	//}
+	//err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		//if err != nil {
+			//return err
+		//}
+		//if info.Mode().IsRegular() && filepath.Ext(path) == ".tf" {
+			//fileResources, fileDataSources, err := extractFromFilePath(path)
+			//if err != nil {
+				//return err
+			//}
+			//resources = append(resources, fileResources...)
+			//dataSources = append(dataSources, fileDataSources...)
+		//}
+		//return nil
+	//})
+	//if err != nil {
+		//return nil, nil, err
+	//}
+	//return resources, dataSources, nil
+//}
 
 // extractFromFilePath extracts resources and data sources from a Terraform file
 func extractFromFilePath(filePath string) ([]string, []string, error) {
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error reading file %s: %v", filePath, err)
-	}
+    content, err := os.ReadFile(filePath)
+    if err != nil {
+        return nil, nil, fmt.Errorf("error reading file %s: %v", filePath, err)
+    }
 
-	parser := hclparse.NewParser()
-	file, diags := parser.ParseHCL(content, filePath)
-	if diags.HasErrors() {
-		return nil, nil, fmt.Errorf("error parsing HCL: %v", diags)
-	}
+    parser := hclparse.NewParser()
+    file, diags := parser.ParseHCL(content, filePath)
+    if diags.HasErrors() {
+        return nil, nil, fmt.Errorf("error parsing HCL: %v", diags)
+    }
 
-	var resources []string
-	var dataSources []string
+    var resources []string
+    var dataSources []string
 
-	body := file.Body
-	hclContent, diags := body.Content(&hcl.BodySchema{
-		Blocks: []hcl.BlockHeaderSchema{
-			{Type: "resource", LabelNames: []string{"type", "name"}},
-			{Type: "data", LabelNames: []string{"type", "name"}},
-		},
-	})
-	if diags.HasErrors() {
-		return nil, nil, fmt.Errorf("error getting content: %v", diags)
-	}
+    body := file.Body
+    hclContent, diags := body.Content(&hcl.BodySchema{
+        Blocks: []hcl.BlockHeaderSchema{
+            {Type: "resource", LabelNames: []string{"type", "name"}},
+            {Type: "data", LabelNames: []string{"type", "name"}},
+        },
+    })
+    if diags.HasErrors() {
+        // Log the diagnostics but continue processing
+        fmt.Printf("Diagnostics when processing %s: %v\n", filePath, diags)
+    }
 
-	for _, block := range hclContent.Blocks {
-		if len(block.Labels) >= 2 {
-			resourceType := strings.TrimSpace(block.Labels[0])
-			if block.Type == "resource" {
-				resources = append(resources, resourceType)
-			} else if block.Type == "data" {
-				dataSources = append(dataSources, resourceType)
-			}
-		}
-	}
+    for _, block := range hclContent.Blocks {
+        if len(block.Labels) >= 2 {
+            resourceType := strings.TrimSpace(block.Labels[0])
+            if block.Type == "resource" {
+                resources = append(resources, resourceType)
+            } else if block.Type == "data" {
+                dataSources = append(dataSources, resourceType)
+            }
+        }
+    }
 
-	return resources, dataSources, nil
+    return resources, dataSources, nil
 }
 
 // TestMarkdown runs the markdown validation tests
