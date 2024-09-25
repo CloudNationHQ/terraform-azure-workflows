@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.1.0...v1.1.1) (2024-09-25)
+
+
+### Bug Fixes
+
+* change env variable validation tests in workflow ([#31](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/31)) ([79fdb43](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/79fdb43e3044f5278313e23c5be6a5b3e9d9ff6c))
+
 ## [1.1.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.0.0...v1.1.0) (2024-09-16)
 
 
