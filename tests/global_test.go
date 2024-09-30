@@ -621,12 +621,6 @@ func extractReadmeResources(data string) ([]string, []string, error) {
 									if ok1 && ok2 {
 										name := extractTextFromNodes(nameCell.GetChildren())
 										name = strings.TrimSpace(name)
-										name = strings.Trim(name, "[]") // Remove brackets
-										name = strings.TrimSpace(name)
-										// Extract the resource name from the link text if present
-										if strings.HasPrefix(name, "[") && strings.Contains(name, "]") {
-											name = name[1:strings.Index(name, "]")]
-										}
 										resourceType := extractTextFromNodes(typeCell.GetChildren())
 										resourceType = strings.TrimSpace(resourceType)
 										if strings.EqualFold(resourceType, "resource") {
@@ -654,7 +648,7 @@ func extractReadmeResources(data string) ([]string, []string, error) {
 	return resources, dataSources, nil
 }
 
-// extractText extracts text from a node, including code spans
+// extractText extracts text from a node, including code spans and links
 func extractText(node ast.Node) string {
 	var sb strings.Builder
 	var extract func(n ast.Node)
@@ -664,6 +658,10 @@ func extractText(node ast.Node) string {
 			sb.Write(tn.Literal)
 		case *ast.Code:
 			sb.Write(tn.Leaf.Literal)
+		case *ast.Link:
+			for _, child := range tn.GetChildren() {
+				extract(child)
+			}
 		default:
 			for _, child := range n.GetChildren() {
 				extract(child)
