@@ -14,7 +14,7 @@ import (
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/gomarkdown/markdown/parser"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/hashicorp/hcl/v2/hclparse"
 	"mvdan.cc/xurls/v2"
 )
 
@@ -496,27 +496,30 @@ func extractTerraformItems(filePath string, blockType string) ([]string, error) 
 		return nil, fmt.Errorf("error reading file %s: %v", filepath.Base(filePath), err)
 	}
 
-	file, diags := hclwrite.ParseConfig(content, filePath, hcl.InitialPos)
+	parser := hclparse.NewParser()
+	file, diags := parser.ParseHCL(content, filePath)
 	if diags.HasErrors() {
 		return nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), diags)
+	}
+
+	bodyContent, diags := file.Body.Content(&hcl.BodySchema{
+		Blocks: []hcl.BlockHeaderSchema{
+			{Type: blockType},
+		},
+	})
+	if diags.HasErrors() {
+		return nil, fmt.Errorf("error getting body content in %s: %v", filepath.Base(filePath), diags)
 	}
 
 	var items []string
 	itemSet := make(map[string]struct{})
 
-	for _, block := range file.Body().Blocks() {
-		if block.Type() == blockType {
-			labels := block.Labels()
-			if len(labels) >= 1 {
-				itemName := labels[0]
-
-				// Strip suffixes from item name
-				baseItemName := stripSuffix(itemName)
-
-				if _, exists := itemSet[baseItemName]; !exists {
-					itemSet[baseItemName] = struct{}{}
-					items = append(items, baseItemName)
-				}
+	for _, block := range bodyContent.Blocks {
+		if len(block.Labels) >= 1 {
+			itemName := block.Labels[0]
+			if _, exists := itemSet[itemName]; !exists {
+				itemSet[itemName] = struct{}{}
+				items = append(items, itemName)
 			}
 		}
 	}
@@ -740,9 +743,20 @@ func extractFromFilePath(filePath string) ([]string, []string, error) {
 		return nil, nil, fmt.Errorf("error reading file %s: %v", filepath.Base(filePath), err)
 	}
 
-	file, diags := hclwrite.ParseConfig(content, filePath, hcl.InitialPos)
+	parser := hclparse.NewParser()
+	file, diags := parser.ParseHCL(content, filePath)
 	if diags.HasErrors() {
 		return nil, nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), diags)
+	}
+
+	bodyContent, diags := file.Body.Content(&hcl.BodySchema{
+		Blocks: []hcl.BlockHeaderSchema{
+			{Type: "resource"},
+			{Type: "data"},
+		},
+	})
+	if diags.HasErrors() {
+		return nil, nil, fmt.Errorf("error getting body content in %s: %v", filepath.Base(filePath), diags)
 	}
 
 	var resources []string
@@ -751,44 +765,27 @@ func extractFromFilePath(filePath string) ([]string, []string, error) {
 	resourceSet := make(map[string]struct{})
 	dataSourceSet := make(map[string]struct{})
 
-	for _, block := range file.Body().Blocks() {
-		if block.Type() == "resource" || block.Type() == "data" {
-			labels := block.Labels()
-			if len(labels) >= 2 {
-				resourceType := labels[0]
-				resourceName := labels[1]
+	for _, block := range bodyContent.Blocks {
+		if len(block.Labels) >= 2 {
+			resourceType := block.Labels[0]
+			resourceName := block.Labels[1]
+			fullName := resourceType + "." + resourceName
 
-				// Strip suffixes from resource name
-				baseResourceName := stripSuffix(resourceName)
-				fullName := resourceType + "." + baseResourceName
-
-				if block.Type() == "resource" {
-					if _, exists := resourceSet[fullName]; !exists {
-						resourceSet[fullName] = struct{}{}
-						resources = append(resources, fullName)
-					}
-				} else if block.Type() == "data" {
-					if _, exists := dataSourceSet[fullName]; !exists {
-						dataSourceSet[fullName] = struct{}{}
-						dataSources = append(dataSources, fullName)
-					}
+			if block.Type == "resource" {
+				if _, exists := resourceSet[fullName]; !exists {
+					resourceSet[fullName] = struct{}{}
+					resources = append(resources, fullName)
+				}
+			} else if block.Type == "data" {
+				if _, exists := dataSourceSet[fullName]; !exists {
+					dataSourceSet[fullName] = struct{}{}
+					dataSources = append(dataSources, fullName)
 				}
 			}
 		}
 	}
 
 	return resources, dataSources, nil
-}
-
-// stripSuffix removes any suffixes from the resource name after the base name
-func stripSuffix(name string) string {
-	delimiters := []string{"_", "-", "."}
-	for _, delimiter := range delimiters {
-		if idx := strings.Index(name, delimiter); idx != -1 {
-			return name[:idx]
-		}
-	}
-	return name
 }
 
 // TestMarkdown runs the markdown validation tests
@@ -811,7 +808,6 @@ func TestMarkdown(t *testing.T) {
 		t.FailNow()
 	}
 }
-
 
 //package main
 
