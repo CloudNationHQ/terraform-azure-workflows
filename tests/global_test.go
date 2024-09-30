@@ -14,7 +14,7 @@ import (
     "github.com/gomarkdown/markdown/ast"
     "github.com/gomarkdown/markdown/parser"
     "github.com/hashicorp/hcl/v2"
-    "github.com/hashicorp/hcl/v2/hclparse"
+    "github.com/hashicorp/hcl/v2/hclsyntax"
     "mvdan.cc/xurls/v2"
 )
 
@@ -496,64 +496,33 @@ func extractTerraformItems(filePath string, blockType string) ([]string, error) 
         return nil, fmt.Errorf("error reading file %s: %v", filepath.Base(filePath), err)
     }
 
-    parser := hclparse.NewParser()
-    file, parseDiags := parser.ParseHCL(content, filePath)
-    if parseDiags.HasErrors() {
-        return nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), parseDiags)
+    file, diags := hclsyntax.ParseConfig(content, filePath, hcl.InitialPos)
+    if diags.HasErrors() {
+        return nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), diags)
+    }
+
+    body, ok := file.Body.(*hclsyntax.Body)
+    if !ok {
+        return nil, fmt.Errorf("failed to parse HCL body as hclsyntax.Body")
     }
 
     var items []string
-    body := file.Body
-
-    // Initialize diagnostics variable
-    var diags hcl.Diagnostics
-
-    // Use PartialContent to extract only the specified block type
-    hclContent, _, contentDiags := body.PartialContent(&hcl.BodySchema{
-        Blocks: []hcl.BlockHeaderSchema{
-            {Type: blockType, LabelNames: []string{"name"}},
-        },
-    })
-
-    // Append diagnostics
-    diags = append(diags, contentDiags...)
-
-    // Filter out diagnostics related to unsupported block types
-    diags = filterUnsupportedBlockDiagnostics(diags)
-    if diags.HasErrors() {
-        return nil, fmt.Errorf("error getting content from %s: %v", filepath.Base(filePath), diags)
-    }
-
-    if hclContent == nil {
-        // No relevant blocks found
-        return items, nil
-    }
-
     itemSet := make(map[string]struct{})
 
-    for _, block := range hclContent.Blocks {
-        if len(block.Labels) > 0 {
-            itemName := strings.TrimSpace(block.Labels[0])
-            if _, exists := itemSet[itemName]; !exists {
-                itemSet[itemName] = struct{}{}
-                items = append(items, itemName)
+    for _, block := range body.Blocks {
+        if block.Type == blockType {
+            labels := block.Labels
+            if len(labels) >= 1 {
+                itemName := labels[0]
+                if _, exists := itemSet[itemName]; !exists {
+                    itemSet[itemName] = struct{}{}
+                    items = append(items, itemName)
+                }
             }
         }
     }
 
     return items, nil
-}
-
-// filterUnsupportedBlockDiagnostics filters out diagnostics related to unsupported block types
-func filterUnsupportedBlockDiagnostics(diags hcl.Diagnostics) hcl.Diagnostics {
-    var filteredDiags hcl.Diagnostics
-    for _, diag := range diags {
-        if diag.Severity == hcl.DiagError && strings.Contains(diag.Summary, "Unsupported block type") {
-            continue
-        }
-        filteredDiags = append(filteredDiags, diag)
-    }
-    return filteredDiags
 }
 
 // extractMarkdownSectionItems extracts items from a markdown section
@@ -765,65 +734,48 @@ func extractFromDirectory(dirPath string) ([]string, []string, error) {
     return resources, dataSources, nil
 }
 
-// extractFromFilePath extracts resources and data sources from a Terraform file
+// extractFromFilePath extracts resource definitions from a Terraform file
 func extractFromFilePath(filePath string) ([]string, []string, error) {
     content, err := os.ReadFile(filePath)
     if err != nil {
         return nil, nil, fmt.Errorf("error reading file %s: %v", filepath.Base(filePath), err)
     }
 
-    parser := hclparse.NewParser()
-    file, parseDiags := parser.ParseHCL(content, filePath)
-    if parseDiags.HasErrors() {
-        return nil, nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), parseDiags)
+    file, diags := hclsyntax.ParseConfig(content, filePath, hcl.InitialPos)
+    if diags.HasErrors() {
+        return nil, nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), diags)
+    }
+
+    body, ok := file.Body.(*hclsyntax.Body)
+    if !ok {
+        return nil, nil, fmt.Errorf("failed to parse HCL body as hclsyntax.Body")
     }
 
     var resources []string
     var dataSources []string
-    body := file.Body
-
-    // Initialize diagnostics variable
-    var diags hcl.Diagnostics
-
-    // Use PartialContent to allow unknown blocks
-    hclContent, _, contentDiags := body.PartialContent(&hcl.BodySchema{
-        Blocks: []hcl.BlockHeaderSchema{
-            {Type: "resource", LabelNames: []string{"type", "name"}},
-            {Type: "data", LabelNames: []string{"type", "name"}},
-        },
-    })
-
-    // Append diagnostics
-    diags = append(diags, contentDiags...)
-
-    // Filter out diagnostics related to unsupported block types
-    diags = filterUnsupportedBlockDiagnostics(diags)
-    if diags.HasErrors() {
-        return nil, nil, fmt.Errorf("error getting content from %s: %v", filepath.Base(filePath), diags)
-    }
-
-    if hclContent == nil {
-        // No relevant blocks found
-        return resources, dataSources, nil
-    }
 
     resourceSet := make(map[string]struct{})
     dataSourceSet := make(map[string]struct{})
 
-    for _, block := range hclContent.Blocks {
-        if len(block.Labels) >= 2 {
-            resourceType := strings.TrimSpace(block.Labels[0])
-            resourceName := strings.TrimSpace(block.Labels[1])
-            fullName := resourceType + "." + resourceName
-            if block.Type == "resource" {
-                if _, exists := resourceSet[fullName]; !exists {
-                    resourceSet[fullName] = struct{}{}
-                    resources = append(resources, fullName)
-                }
-            } else if block.Type == "data" {
-                if _, exists := dataSourceSet[fullName]; !exists {
-                    dataSourceSet[fullName] = struct{}{}
-                    dataSources = append(dataSources, fullName)
+    for _, block := range body.Blocks {
+        if block.Type == "resource" || block.Type == "data" {
+            labels := block.Labels
+            if len(labels) >= 2 {
+                resourceType := labels[0]
+                resourceName := labels[1]
+                fullName := resourceType + "." + resourceName
+
+                // Only process resource definitions (not instances)
+                if block.Type == "resource" {
+                    if _, exists := resourceSet[fullName]; !exists {
+                        resourceSet[fullName] = struct{}{}
+                        resources = append(resources, fullName)
+                    }
+                } else if block.Type == "data" {
+                    if _, exists := dataSourceSet[fullName]; !exists {
+                        dataSourceSet[fullName] = struct{}{}
+                        dataSources = append(dataSources, fullName)
+                    }
                 }
             }
         }
@@ -852,6 +804,7 @@ func TestMarkdown(t *testing.T) {
         t.FailNow()
     }
 }
+
 
 //package main
 
