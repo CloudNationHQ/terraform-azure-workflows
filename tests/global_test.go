@@ -738,7 +738,6 @@ func extractFromDirectory(dirPath string) ([]string, []string, error) {
 			if entry.Name() == "modules" {
 				continue // Skip the modules directory
 			}
-			// Optionally, you can skip other directories or process them if needed
 			subDirPath := filepath.Join(dirPath, entry.Name())
 			subResources, subDataSources, err := extractFromDirectory(subDirPath)
 			if err != nil {
@@ -808,14 +807,28 @@ func extractFromFilePath(filePath string) ([]string, []string, error) {
 			resourceName := strings.TrimSpace(block.Labels[1])
 			fullName := resourceType + "." + resourceName
 			if block.Type == "resource" {
-				resources = append(resources, fullName)
+				if !contains(resources, fullName) {
+					resources = append(resources, fullName)
+				}
 			} else if block.Type == "data" {
-				dataSources = append(dataSources, fullName)
+				if !contains(dataSources, fullName) {
+					dataSources = append(dataSources, fullName)
+				}
 			}
 		}
 	}
 
 	return resources, dataSources, nil
+}
+
+// contains checks if a slice contains a string
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }
 
 // TestMarkdown runs the markdown validation tests
