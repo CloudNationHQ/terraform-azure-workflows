@@ -1,828 +1,846 @@
 package main
 
 import (
-	"errors"
-	"fmt"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
-	"testing"
+    "errors"
+    "fmt"
+    "net/http"
+    "os"
+    "path/filepath"
+    "strings"
+    "sync"
+    "testing"
+    "unicode"
 
-	"github.com/gomarkdown/markdown"
-	"github.com/gomarkdown/markdown/ast"
-	"github.com/gomarkdown/markdown/parser"
-	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/hclparse"
-	"mvdan.cc/xurls/v2"
+    "github.com/gomarkdown/markdown"
+    "github.com/gomarkdown/markdown/ast"
+    "github.com/gomarkdown/markdown/parser"
+    "github.com/hashicorp/hcl/v2"
+    "github.com/hashicorp/hcl/v2/hclparse"
+    "mvdan.cc/xurls/v2"
 )
 
 // Validator is an interface for all validators
 type Validator interface {
-	Validate() []error
+    Validate() []error
 }
 
 // MarkdownValidator orchestrates all validations
 type MarkdownValidator struct {
-	readmePath string
-	data       string
-	validators []Validator
+    readmePath string
+    data       string
+    validators []Validator
 }
 
 // NewMarkdownValidator creates a new MarkdownValidator
 func NewMarkdownValidator(readmePath string) (*MarkdownValidator, error) {
-	if envPath := os.Getenv("README_PATH"); envPath != "" {
-		readmePath = envPath
-	}
+    if envPath := os.Getenv("README_PATH"); envPath != "" {
+        readmePath = envPath
+    }
 
-	absReadmePath, err := filepath.Abs(readmePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get absolute path: %v", err)
-	}
+    absReadmePath, err := filepath.Abs(readmePath)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get absolute path: %v", err)
+    }
 
-	dataBytes, err := os.ReadFile(absReadmePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
-	}
-	data := string(dataBytes)
+    dataBytes, err := os.ReadFile(absReadmePath)
+    if err != nil {
+        return nil, fmt.Errorf("failed to read file: %v", err)
+    }
+    data := string(dataBytes)
 
-	mv := &MarkdownValidator{
-		readmePath: absReadmePath,
-		data:       data,
-	}
+    mv := &MarkdownValidator{
+        readmePath: absReadmePath,
+        data:       data,
+    }
 
-	// Initialize validators
-	mv.validators = []Validator{
-		NewSectionValidator(data),
-		NewFileValidator(absReadmePath),
-		NewURLValidator(data),
-		NewTerraformDefinitionValidator(data),
-		NewItemValidator(data, "Variables", "variable", "Inputs", "variables.tf"),
-		NewItemValidator(data, "Outputs", "output", "Outputs", "outputs.tf"),
-	}
+    // Initialize validators
+    mv.validators = []Validator{
+        NewSectionValidator(data),
+        NewFileValidator(absReadmePath),
+        NewURLValidator(data),
+        NewTerraformDefinitionValidator(data),
+        NewItemValidator(data, "Variables", "variable", "Inputs", "variables.tf"),
+        NewItemValidator(data, "Outputs", "output", "Outputs", "outputs.tf"),
+    }
 
-	return mv, nil
+    return mv, nil
 }
 
 // Validate runs all registered validators
 func (mv *MarkdownValidator) Validate() []error {
-	var allErrors []error
-	for _, validator := range mv.validators {
-		allErrors = append(allErrors, validator.Validate()...)
-	}
-	return allErrors
+    var allErrors []error
+    for _, validator := range mv.validators {
+        allErrors = append(allErrors, validator.Validate()...)
+    }
+    return allErrors
 }
 
 // Section represents a markdown section
 type Section struct {
-	Header  string
-	Columns []string
+    Header  string
+    Columns []string
 }
 
 // SectionValidator validates markdown sections
 type SectionValidator struct {
-	data     string
-	sections []Section
-	rootNode ast.Node
+    data     string
+    sections []Section
+    rootNode ast.Node
 }
 
 // NewSectionValidator creates a new SectionValidator
 func NewSectionValidator(data string) *SectionValidator {
-	sections := []Section{
-		{Header: "Goals"},
-		{Header: "Resources", Columns: []string{"Name", "Type"}},
-		{Header: "Providers", Columns: []string{"Name", "Version"}},
-		{Header: "Requirements", Columns: []string{"Name", "Version"}},
-		{Header: "Inputs", Columns: []string{"Name", "Description", "Type", "Default", "Required"}},
-		{Header: "Outputs", Columns: []string{"Name", "Description"}},
-		{Header: "Features"},
-		{Header: "Testing"},
-		{Header: "Authors"},
-		{Header: "License"},
-	}
+    sections := []Section{
+        {Header: "Goals"},
+        {Header: "Resources", Columns: []string{"Name", "Type"}},
+        {Header: "Providers", Columns: []string{"Name", "Version"}},
+        {Header: "Requirements", Columns: []string{"Name", "Version"}},
+        {Header: "Inputs", Columns: []string{"Name", "Description", "Type", "Default", "Required"}},
+        {Header: "Outputs", Columns: []string{"Name", "Description"}},
+        {Header: "Features"},
+        {Header: "Testing"},
+        {Header: "Authors"},
+        {Header: "License"},
+    }
 
-	// Parse the markdown content into an AST
-	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
-	p := parser.NewWithExtensions(extensions)
-	rootNode := markdown.Parse([]byte(data), p)
+    // Parse the markdown content into an AST
+    extensions := parser.CommonExtensions | parser.AutoHeadingIDs
+    p := parser.NewWithExtensions(extensions)
+    rootNode := markdown.Parse([]byte(data), p)
 
-	return &SectionValidator{
-		data:     data,
-		sections: sections,
-		rootNode: rootNode,
-	}
+    return &SectionValidator{
+        data:     data,
+        sections: sections,
+        rootNode: rootNode,
+    }
 }
 
 // Validate validates the sections in the markdown
 func (sv *SectionValidator) Validate() []error {
-	var allErrors []error
-	for _, section := range sv.sections {
-		allErrors = append(allErrors, section.validate(sv.rootNode)...)
-	}
-	return allErrors
+    var allErrors []error
+    for _, section := range sv.sections {
+        allErrors = append(allErrors, section.validate(sv.rootNode)...)
+    }
+    return allErrors
 }
 
 // validate checks if a section and its columns are correctly formatted
 func (s Section) validate(rootNode ast.Node) []error {
-	var errors []error
-	found := false
+    var errors []error
+    found := false
 
-	// Traverse the AST to find the section header
-	ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
-		if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
-			text := strings.TrimSpace(extractText(heading))
-			if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
-				found = true
+    // Traverse the AST to find the section header
+    ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
+        if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
+            text := strings.TrimSpace(extractText(heading))
+            if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
+                found = true
 
-				if len(s.Columns) > 0 {
-					// Check for the table after the header
-					nextNode := getNextSibling(node)
+                if len(s.Columns) > 0 {
+                    // Check for the table after the header
+                    nextNode := getNextSibling(node)
 
-					// Skip over HTML blocks (e.g., <!-- BEGIN_TF_DOCS -->)
-					for {
-						if _, ok := nextNode.(*ast.HTMLBlock); ok {
-							nextNode = getNextSibling(nextNode)
-						} else {
-							break
-						}
-					}
+                    // Skip over HTML blocks (e.g., <!-- BEGIN_TF_DOCS -->)
+                    for {
+                        if _, ok := nextNode.(*ast.HTMLBlock); ok {
+                            nextNode = getNextSibling(nextNode)
+                        } else {
+                            break
+                        }
+                    }
 
-					if table, ok := nextNode.(*ast.Table); ok {
-						// Extract table headers
-						actualHeaders, err := extractTableHeaders(table)
-						if err != nil {
-							errors = append(errors, err)
-						} else if !containsAllColumns(actualHeaders, s.Columns) {
-							errors = append(errors, compareColumns(s.Header, s.Columns, actualHeaders))
-						}
-					} else {
-						errors = append(errors, formatError("missing table after header: %s", s.Header))
-					}
-				}
-				return ast.SkipChildren
-			}
-		}
-		return ast.GoToNext
-	})
+                    if table, ok := nextNode.(*ast.Table); ok {
+                        // Extract table headers
+                        actualHeaders, err := extractTableHeaders(table)
+                        if err != nil {
+                            errors = append(errors, err)
+                        } else if !containsAllColumns(actualHeaders, s.Columns) {
+                            errors = append(errors, compareColumns(s.Header, s.Columns, actualHeaders))
+                        }
+                    } else {
+                        errors = append(errors, formatError("missing table after header: %s", s.Header))
+                    }
+                }
+                return ast.SkipChildren
+            }
+        }
+        return ast.GoToNext
+    })
 
-	if !found {
-		errors = append(errors, compareHeaders(s.Header, ""))
-	}
+    if !found {
+        errors = append(errors, compareHeaders(s.Header, ""))
+    }
 
-	return errors
+    return errors
 }
 
 // getNextSibling returns the next sibling of a node
 func getNextSibling(node ast.Node) ast.Node {
-	parent := node.GetParent()
-	if parent == nil {
-		return nil
-	}
-	children := parent.GetChildren()
-	for i, n := range children {
-		if n == node && i+1 < len(children) {
-			return children[i+1]
-		}
-	}
-	return nil
+    parent := node.GetParent()
+    if parent == nil {
+        return nil
+    }
+    children := parent.GetChildren()
+    for i, n := range children {
+        if n == node && i+1 < len(children) {
+            return children[i+1]
+        }
+    }
+    return nil
 }
 
 // extractTableHeaders extracts headers from a markdown table
 func extractTableHeaders(table *ast.Table) ([]string, error) {
-	headers := []string{}
+    headers := []string{}
 
-	if len(table.GetChildren()) == 0 {
-		return nil, fmt.Errorf("table is empty")
-	}
+    if len(table.GetChildren()) == 0 {
+        return nil, fmt.Errorf("table is empty")
+    }
 
-	// The first child should be TableHeader
-	if headerNode, ok := table.GetChildren()[0].(*ast.TableHeader); ok {
-		for _, rowNode := range headerNode.GetChildren() {
-			if row, ok := rowNode.(*ast.TableRow); ok {
-				for _, cellNode := range row.GetChildren() {
-					if cell, ok := cellNode.(*ast.TableCell); ok {
-						headerText := strings.TrimSpace(extractTextFromNodes(cell.GetChildren()))
-						headers = append(headers, headerText)
-					}
-				}
-			}
-		}
-	} else {
-		return nil, fmt.Errorf("table has no header row")
-	}
+    // The first child should be TableHeader
+    if headerNode, ok := table.GetChildren()[0].(*ast.TableHeader); ok {
+        for _, rowNode := range headerNode.GetChildren() {
+            if row, ok := rowNode.(*ast.TableRow); ok {
+                for _, cellNode := range row.GetChildren() {
+                    if cell, ok := cellNode.(*ast.TableCell); ok {
+                        headerText := strings.TrimSpace(extractTextFromNodes(cell.GetChildren()))
+                        headers = append(headers, headerText)
+                    }
+                }
+            }
+        }
+    } else {
+        return nil, fmt.Errorf("table has no header row")
+    }
 
-	return headers, nil
+    return headers, nil
 }
 
 // containsAllColumns checks if all expected columns are present in actual headers
 func containsAllColumns(actual, expected []string) bool {
-	actualSet := make(map[string]struct{}, len(actual))
-	for _, a := range actual {
-		actualSet[a] = struct{}{}
-	}
-	for _, e := range expected {
-		if _, found := actualSet[e]; !found {
-			return false
-		}
-	}
-	return true
+    actualSet := make(map[string]struct{}, len(actual))
+    for _, a := range actual {
+        actualSet[a] = struct{}{}
+    }
+    for _, e := range expected {
+        if _, found := actualSet[e]; !found {
+            return false
+        }
+    }
+    return true
 }
 
 // compareColumns compares expected and actual table columns
 func compareColumns(header string, expected, actual []string) error {
-	var missing []string
-	for _, exp := range expected {
-		found := false
-		for _, act := range actual {
-			if exp == act {
-				found = true
-				break
-			}
-		}
-		if !found {
-			missing = append(missing, exp)
-		}
-	}
-	if len(missing) > 0 {
-		return formatError("table under header '%s' is missing columns:\n  %s", header, strings.Join(missing, "\n  "))
-	}
-	return nil
+    var missing []string
+    for _, exp := range expected {
+        found := false
+        for _, act := range actual {
+            if exp == act {
+                found = true
+                break
+            }
+        }
+        if !found {
+            missing = append(missing, exp)
+        }
+    }
+    if len(missing) > 0 {
+        return formatError("table under header '%s' is missing columns:\n  %s", header, strings.Join(missing, "\n  "))
+    }
+    return nil
 }
 
 // FileValidator validates the presence of required files
 type FileValidator struct {
-	files []string
+    files []string
 }
 
 func NewFileValidator(readmePath string) *FileValidator {
-	rootDir := filepath.Dir(readmePath)
-	files := []string{
-		readmePath,
-		filepath.Join(rootDir, "CONTRIBUTING.md"),
-		filepath.Join(rootDir, "CODE_OF_CONDUCT.md"),
-		filepath.Join(rootDir, "SECURITY.md"),
-		filepath.Join(rootDir, "LICENSE"),
-		filepath.Join(rootDir, "outputs.tf"),
-		filepath.Join(rootDir, "variables.tf"),
-		filepath.Join(rootDir, "terraform.tf"),
-		filepath.Join(rootDir, "Makefile"),
-	}
-	return &FileValidator{
-		files: files,
-	}
+    rootDir := filepath.Dir(readmePath)
+    files := []string{
+        readmePath,
+        filepath.Join(rootDir, "CONTRIBUTING.md"),
+        filepath.Join(rootDir, "CODE_OF_CONDUCT.md"),
+        filepath.Join(rootDir, "SECURITY.md"),
+        filepath.Join(rootDir, "LICENSE"),
+        filepath.Join(rootDir, "outputs.tf"),
+        filepath.Join(rootDir, "variables.tf"),
+        filepath.Join(rootDir, "terraform.tf"),
+        filepath.Join(rootDir, "Makefile"),
+    }
+    return &FileValidator{
+        files: files,
+    }
 }
 
 // Validate checks if required files exist and are not empty
 func (fv *FileValidator) Validate() []error {
-	var allErrors []error
-	for _, filePath := range fv.files {
-		allErrors = append(allErrors, validateFile(filePath)...)
-	}
-	return allErrors
+    var allErrors []error
+    for _, filePath := range fv.files {
+        allErrors = append(allErrors, validateFile(filePath)...)
+    }
+    return allErrors
 }
 
 // validateFile checks if a file exists and is not empty
 func validateFile(filePath string) []error {
-	var errors []error
-	fileInfo, err := os.Stat(filePath)
-	baseName := filepath.Base(filePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			errors = append(errors, formatError("file does not exist:\n  %s", baseName))
-		} else {
-			errors = append(errors, formatError("error accessing file:\n  %s\n  %v", baseName, err))
-		}
-		return errors
-	}
+    var errors []error
+    fileInfo, err := os.Stat(filePath)
+    baseName := filepath.Base(filePath)
+    if err != nil {
+        if os.IsNotExist(err) {
+            errors = append(errors, formatError("file does not exist:\n  %s", baseName))
+        } else {
+            errors = append(errors, formatError("error accessing file:\n  %s\n  %v", baseName, err))
+        }
+        return errors
+    }
 
-	if fileInfo.Size() == 0 {
-		errors = append(errors, formatError("file is empty:\n  %s", baseName))
-	}
+    if fileInfo.Size() == 0 {
+        errors = append(errors, formatError("file is empty:\n  %s", baseName))
+    }
 
-	return errors
+    return errors
 }
 
 // URLValidator validates URLs in the markdown
 type URLValidator struct {
-	data string
+    data string
 }
 
 // NewURLValidator creates a new URLValidator
 func NewURLValidator(data string) *URLValidator {
-	return &URLValidator{data: data}
+    return &URLValidator{data: data}
 }
 
 // Validate checks all URLs in the markdown for accessibility
 func (uv *URLValidator) Validate() []error {
-	return validateURLs(uv.data)
+    return validateURLs(uv.data)
 }
 
 // validateURLs checks if URLs in the data are accessible
 func validateURLs(data string) []error {
-	rxStrict := xurls.Strict()
-	urls := rxStrict.FindAllString(data, -1)
+    rxStrict := xurls.Strict()
+    urls := rxStrict.FindAllString(data, -1)
 
-	var wg sync.WaitGroup
-	errChan := make(chan error, len(urls))
+    var wg sync.WaitGroup
+    errChan := make(chan error, len(urls))
 
-	for _, u := range urls {
-		if strings.Contains(u, "registry.terraform.io/providers/") {
-			continue
-		}
+    for _, u := range urls {
+        if strings.Contains(u, "registry.terraform.io/providers/") {
+            continue
+        }
 
-		wg.Add(1)
-		go func(url string) {
-			defer wg.Done()
-			if err := validateSingleURL(url); err != nil {
-				errChan <- err
-			}
-		}(u)
-	}
+        wg.Add(1)
+        go func(url string) {
+            defer wg.Done()
+            if err := validateSingleURL(url); err != nil {
+                errChan <- err
+            }
+        }(u)
+    }
 
-	wg.Wait()
-	close(errChan)
+    wg.Wait()
+    close(errChan)
 
-	var errors []error
-	for err := range errChan {
-		errors = append(errors, err)
-	}
+    var errors []error
+    for err := range errChan {
+        errors = append(errors, err)
+    }
 
-	return errors
+    return errors
 }
 
 // validateSingleURL checks if a single URL is accessible
 func validateSingleURL(url string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return formatError("error accessing URL:\n  %s\n  %v", url, err)
-	}
-	defer resp.Body.Close()
+    resp, err := http.Get(url)
+    if err != nil {
+        return formatError("error accessing URL:\n  %s\n  %v", url, err)
+    }
+    defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return formatError("URL returned non-OK status:\n  %s\n  Status: %d", url, resp.StatusCode)
-	}
+    if resp.StatusCode != http.StatusOK {
+        return formatError("URL returned non-OK status:\n  %s\n  Status: %d", url, resp.StatusCode)
+    }
 
-	return nil
+    return nil
 }
 
 // TerraformDefinitionValidator validates Terraform definitions
 type TerraformDefinitionValidator struct {
-	data string
+    data string
 }
 
 // NewTerraformDefinitionValidator creates a new TerraformDefinitionValidator
 func NewTerraformDefinitionValidator(data string) *TerraformDefinitionValidator {
-	return &TerraformDefinitionValidator{data: data}
+    return &TerraformDefinitionValidator{data: data}
 }
 
 // Validate compares Terraform resources with those documented in the markdown
 func (tdv *TerraformDefinitionValidator) Validate() []error {
-	tfResources, tfDataSources, err := extractTerraformResources()
-	if err != nil {
-		return []error{err}
-	}
+    tfResources, tfDataSources, err := extractTerraformResources()
+    if err != nil {
+        return []error{err}
+    }
 
-	readmeResources, readmeDataSources, err := extractReadmeResources(tdv.data)
-	if err != nil {
-		return []error{err}
-	}
+    readmeResources, readmeDataSources, err := extractReadmeResources(tdv.data)
+    if err != nil {
+        return []error{err}
+    }
 
-	var errors []error
-	errors = append(errors, compareTerraformAndMarkdown(tfResources, readmeResources, "Resources")...)
-	errors = append(errors, compareTerraformAndMarkdown(tfDataSources, readmeDataSources, "Data Sources")...)
+    var errors []error
+    errors = append(errors, compareTerraformAndMarkdown(tfResources, readmeResources, "Resources")...)
+    errors = append(errors, compareTerraformAndMarkdown(tfDataSources, readmeDataSources, "Data Sources")...)
 
-	return errors
+    return errors
 }
 
 // ItemValidator validates items in Terraform and markdown
 type ItemValidator struct {
-	data      string
-	itemType  string
-	blockType string
-	section   string
-	fileName  string
+    data      string
+    itemType  string
+    blockType string
+    section   string
+    fileName  string
 }
 
 // NewItemValidator creates a new ItemValidator
 func NewItemValidator(data, itemType, blockType, section, fileName string) *ItemValidator {
-	return &ItemValidator{
-		data:      data,
-		itemType:  itemType,
-		blockType: blockType,
-		section:   section,
-		fileName:  fileName,
-	}
+    return &ItemValidator{
+        data:      data,
+        itemType:  itemType,
+        blockType: blockType,
+        section:   section,
+        fileName:  fileName,
+    }
 }
 
 // Validate compares Terraform items with those documented in the markdown
 func (iv *ItemValidator) Validate() []error {
-	workspace := os.Getenv("GITHUB_WORKSPACE")
-	if workspace == "" {
-		var err error
-		workspace, err = os.Getwd()
-		if err != nil {
-			return []error{fmt.Errorf("failed to get current working directory: %v", err)}
-		}
-	}
-	filePath := filepath.Join(workspace, "caller", iv.fileName)
-	tfItems, err := extractTerraformItems(filePath, iv.blockType)
-	if err != nil {
-		return []error{err}
-	}
+    workspace := os.Getenv("GITHUB_WORKSPACE")
+    if workspace == "" {
+        var err error
+        workspace, err = os.Getwd()
+        if err != nil {
+            return []error{fmt.Errorf("failed to get current working directory: %v", err)}
+        }
+    }
+    filePath := filepath.Join(workspace, "caller", iv.fileName)
+    tfItems, err := extractTerraformItems(filePath, iv.blockType)
+    if err != nil {
+        return []error{err}
+    }
 
-	mdItems, err := extractMarkdownSectionItems(iv.data, iv.section)
-	if err != nil {
-		return []error{err}
-	}
+    mdItems, err := extractMarkdownSectionItems(iv.data, iv.section)
+    if err != nil {
+        return []error{err}
+    }
 
-	return compareTerraformAndMarkdown(tfItems, mdItems, iv.itemType)
+    return compareTerraformAndMarkdown(tfItems, mdItems, iv.itemType)
 }
 
 // Helper functions
 
 // compareHeaders compares expected and actual headers
 func compareHeaders(expected, actual string) error {
-	if expected != actual {
-		if actual == "" {
-			return formatError("incorrect header:\n  expected '%s', found 'not present'", expected)
-		}
-		return formatError("incorrect header:\n  expected '%s', found '%s'", expected, actual)
-	}
-	return nil
+    if expected != actual {
+        if actual == "" {
+            return formatError("incorrect header:\n  expected '%s', found 'not present'", expected)
+        }
+        return formatError("incorrect header:\n  expected '%s', found '%s'", expected, actual)
+    }
+    return nil
 }
 
 // formatError formats an error message
 func formatError(format string, args ...interface{}) error {
-	return fmt.Errorf(format, args...)
+    return fmt.Errorf(format, args...)
 }
 
 // findMissingItems finds items in a that are not in b
 func findMissingItems(a, b []string) []string {
-	bSet := make(map[string]struct{}, len(b))
-	for _, x := range b {
-		bSet[x] = struct{}{}
-	}
-	var missing []string
-	for _, x := range a {
-		if _, found := bSet[x]; !found {
-			missing = append(missing, x)
-		}
-	}
-	return missing
+    bSet := make(map[string]struct{}, len(b))
+    for _, x := range b {
+        bSet[x] = struct{}{}
+    }
+    var missing []string
+    for _, x := range a {
+        if _, found := bSet[x]; !found {
+            missing = append(missing, x)
+        }
+    }
+    return missing
 }
 
 // compareTerraformAndMarkdown compares items in Terraform and markdown
 func compareTerraformAndMarkdown(tfItems, mdItems []string, itemType string) []error {
-	var errors []error
+    var errors []error
 
-	missingInMarkdown := findMissingItems(tfItems, mdItems)
-	if len(missingInMarkdown) > 0 {
-		errors = append(errors, formatError("%s missing in markdown:\n  %s", itemType, strings.Join(missingInMarkdown, "\n  ")))
-	}
+    missingInMarkdown := findMissingItems(tfItems, mdItems)
+    if len(missingInMarkdown) > 0 {
+        errors = append(errors, formatError("%s missing in markdown:\n  %s", itemType, strings.Join(missingInMarkdown, "\n  ")))
+    }
 
-	missingInTerraform := findMissingItems(mdItems, tfItems)
-	if len(missingInTerraform) > 0 {
-		errors = append(errors, formatError("%s in markdown but missing in Terraform:\n  %s", itemType, strings.Join(missingInTerraform, "\n  ")))
-	}
+    missingInTerraform := findMissingItems(mdItems, tfItems)
+    if len(missingInTerraform) > 0 {
+        errors = append(errors, formatError("%s in markdown but missing in Terraform:\n  %s", itemType, strings.Join(missingInTerraform, "\n  ")))
+    }
 
-	return errors
+    return errors
 }
 
 // extractTerraformItems extracts item names from a Terraform file given the block type
 func extractTerraformItems(filePath string, blockType string) ([]string, error) {
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("error reading file %s: %v", filepath.Base(filePath), err)
-	}
+    content, err := os.ReadFile(filePath)
+    if err != nil {
+        return nil, fmt.Errorf("error reading file %s: %v", filepath.Base(filePath), err)
+    }
 
-	parser := hclparse.NewParser()
-	file, diags := parser.ParseHCL(content, filePath)
-	if diags.HasErrors() {
-		return nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), diags)
-	}
+    parser := hclparse.NewParser()
+    file, diags := parser.ParseHCL(content, filePath)
+    if diags.HasErrors() {
+        return nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), diags)
+    }
 
-	bodySchema := &hcl.BodySchema{
-		Blocks: []hcl.BlockHeaderSchema{
-			{
-				Type:       blockType,
-				LabelNames: []string{"name"},
-			},
-		},
-	}
+    bodySchema := &hcl.BodySchema{
+        Blocks: []hcl.BlockHeaderSchema{
+            {
+                Type:       blockType,
+                LabelNames: []string{"name"},
+            },
+        },
+    }
 
-	bodyContent, _, diags := file.Body.PartialContent(bodySchema)
-	if diags.HasErrors() {
-		return nil, fmt.Errorf("error getting body content in %s: %v", filepath.Base(filePath), diags)
-	}
+    bodyContent, _, diags := file.Body.PartialContent(bodySchema)
+    if diags.HasErrors() {
+        return nil, fmt.Errorf("error getting body content in %s: %v", filepath.Base(filePath), diags)
+    }
 
-	var items []string
-	itemSet := make(map[string]struct{})
+    var items []string
+    itemSet := make(map[string]struct{})
 
-	for _, block := range bodyContent.Blocks {
-		if len(block.Labels) >= 1 {
-			itemName := block.Labels[0]
-			if _, exists := itemSet[itemName]; !exists {
-				itemSet[itemName] = struct{}{}
-				items = append(items, itemName)
-			}
-		}
-	}
+    for _, block := range bodyContent.Blocks {
+        if len(block.Labels) >= 1 {
+            itemName := block.Labels[0]
+            if _, exists := itemSet[itemName]; !exists {
+                itemSet[itemName] = struct{}{}
+                items = append(items, itemName)
+            }
+        }
+    }
 
-	return items, nil
+    return items, nil
 }
 
 // extractMarkdownSectionItems extracts items from a markdown section
 func extractMarkdownSectionItems(data, sectionName string) ([]string, error) {
-	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
-	p := parser.NewWithExtensions(extensions)
-	rootNode := markdown.Parse([]byte(data), p)
+    extensions := parser.CommonExtensions | parser.AutoHeadingIDs
+    p := parser.NewWithExtensions(extensions)
+    rootNode := markdown.Parse([]byte(data), p)
 
-	var items []string
-	var inTargetSection bool
+    var items []string
+    var inTargetSection bool
 
-	ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
-		if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
-			text := strings.TrimSpace(extractText(heading))
-			if strings.EqualFold(text, sectionName) || strings.EqualFold(text, sectionName+"s") {
-				inTargetSection = true
-				return ast.GoToNext
-			}
-			inTargetSection = false
-		}
+    ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
+        if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
+            text := strings.TrimSpace(extractText(heading))
+            if strings.EqualFold(text, sectionName) || strings.EqualFold(text, sectionName+"s") {
+                inTargetSection = true
+                return ast.GoToNext
+            }
+            inTargetSection = false
+        }
 
-		if inTargetSection {
-			if table, ok := node.(*ast.Table); ok && entering {
-				// Extract items from the table
-				for _, child := range table.GetChildren() {
-					if body, ok := child.(*ast.TableBody); ok {
-						for _, rowChild := range body.GetChildren() {
-							if tableRow, ok := rowChild.(*ast.TableRow); ok {
-								cells := tableRow.GetChildren()
-								if len(cells) > 0 {
-									if cell, ok := cells[0].(*ast.TableCell); ok {
-										item := extractTextFromNodes(cell.GetChildren())
-										item = strings.TrimSpace(item)
-										item = strings.Trim(item, "`") // Remove backticks if present
-										item = strings.TrimSpace(item)
-										items = append(items, item)
-									}
-								}
-							}
-						}
-					}
-				}
-				// Exit the section after processing the table
-				inTargetSection = false
-				return ast.SkipChildren
-			}
-		}
-		return ast.GoToNext
-	})
+        if inTargetSection {
+            if table, ok := node.(*ast.Table); ok && entering {
+                // Extract items from the table
+                for _, child := range table.GetChildren() {
+                    if body, ok := child.(*ast.TableBody); ok {
+                        for _, rowChild := range body.GetChildren() {
+                            if tableRow, ok := rowChild.(*ast.TableRow); ok {
+                                cells := tableRow.GetChildren()
+                                if len(cells) > 0 {
+                                    if cell, ok := cells[0].(*ast.TableCell); ok {
+                                        item := extractTextFromNodes(cell.GetChildren())
+                                        item = strings.TrimSpace(item)
+                                        item = strings.Trim(item, "`") // Remove backticks if present
+                                        item = strings.TrimSpace(item)
+                                        items = append(items, item)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // Exit the section after processing the table
+                inTargetSection = false
+                return ast.SkipChildren
+            }
+        }
+        return ast.GoToNext
+    })
 
-	if len(items) == 0 {
-		return nil, fmt.Errorf("%s section not found or empty", sectionName)
-	}
+    if len(items) == 0 {
+        return nil, fmt.Errorf("%s section not found or empty", sectionName)
+    }
 
-	return items, nil
+    return items, nil
 }
 
 // extractReadmeResources extracts resources and data sources from the markdown
 func extractReadmeResources(data string) ([]string, []string, error) {
-	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
-	p := parser.NewWithExtensions(extensions)
-	rootNode := markdown.Parse([]byte(data), p)
+    extensions := parser.CommonExtensions | parser.AutoHeadingIDs
+    p := parser.NewWithExtensions(extensions)
+    rootNode := markdown.Parse([]byte(data), p)
 
-	var resources []string
-	var dataSources []string
-	var inResourcesSection bool
+    var resources []string
+    var dataSources []string
+    var inResourcesSection bool
 
-	ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
-		if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
-			text := strings.TrimSpace(extractText(heading))
-			if strings.EqualFold(text, "Resources") {
-				inResourcesSection = true
-				return ast.GoToNext
-			}
-			inResourcesSection = false
-		}
+    ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
+        if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
+            text := strings.TrimSpace(extractText(heading))
+            if strings.EqualFold(text, "Resources") {
+                inResourcesSection = true
+                return ast.GoToNext
+            }
+            inResourcesSection = false
+        }
 
-		if inResourcesSection {
-			if table, ok := node.(*ast.Table); ok && entering {
-				// Extract items from the table
-				for _, child := range table.GetChildren() {
-					if body, ok := child.(*ast.TableBody); ok {
-						for _, rowChild := range body.GetChildren() {
-							if tableRow, ok := rowChild.(*ast.TableRow); ok {
-								cells := tableRow.GetChildren()
-								if len(cells) >= 2 {
-									nameCell, ok1 := cells[0].(*ast.TableCell)
-									typeCell, ok2 := cells[1].(*ast.TableCell)
-									if ok1 && ok2 {
-										name := extractTextFromNodes(nameCell.GetChildren())
-										name = strings.TrimSpace(name)
-										resourceType := extractTextFromNodes(typeCell.GetChildren())
-										resourceType = strings.TrimSpace(resourceType)
-										if strings.EqualFold(resourceType, "resource") {
-											resources = append(resources, name)
-										} else if strings.EqualFold(resourceType, "data source") {
-											dataSources = append(dataSources, name)
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-				inResourcesSection = false // We've processed the table, exit the section
-				return ast.SkipChildren
-			}
-		}
-		return ast.GoToNext
-	})
+        if inResourcesSection {
+            if table, ok := node.(*ast.Table); ok && entering {
+                // Extract items from the table
+                for _, child := range table.GetChildren() {
+                    if body, ok := child.(*ast.TableBody); ok {
+                        for _, rowChild := range body.GetChildren() {
+                            if tableRow, ok := rowChild.(*ast.TableRow); ok {
+                                cells := tableRow.GetChildren()
+                                if len(cells) >= 2 {
+                                    nameCell, ok1 := cells[0].(*ast.TableCell)
+                                    typeCell, ok2 := cells[1].(*ast.TableCell)
+                                    if ok1 && ok2 {
+                                        name := extractTextFromNodes(nameCell.GetChildren())
+                                        name = strings.TrimSpace(name)
+                                        resourceType := extractTextFromNodes(typeCell.GetChildren())
+                                        resourceType = strings.TrimSpace(resourceType)
+                                        if strings.EqualFold(resourceType, "resource") {
+                                            resources = append(resources, name)
+                                        } else if strings.EqualFold(resourceType, "data source") {
+                                            dataSources = append(dataSources, name)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                inResourcesSection = false // We've processed the table, exit the section
+                return ast.SkipChildren
+            }
+        }
+        return ast.GoToNext
+    })
 
-	if len(resources) == 0 && len(dataSources) == 0 {
-		return nil, nil, errors.New("resources section not found or empty")
-	}
+    if len(resources) == 0 && len(dataSources) == 0 {
+        return nil, nil, errors.New("resources section not found or empty")
+    }
 
-	return resources, dataSources, nil
+    return resources, dataSources, nil
 }
 
 // extractText extracts text from a node, including code spans and links
 func extractText(node ast.Node) string {
-	var sb strings.Builder
-	var extract func(n ast.Node)
-	extract = func(n ast.Node) {
-		switch tn := n.(type) {
-		case *ast.Text:
-			sb.Write(tn.Literal)
-		case *ast.Code:
-			sb.Write(tn.Leaf.Literal)
-		case *ast.Link:
-			for _, child := range tn.GetChildren() {
-				extract(child)
-			}
-		default:
-			for _, child := range n.GetChildren() {
-				extract(child)
-			}
-		}
-	}
-	extract(node)
-	return sb.String()
+    var sb strings.Builder
+    var extract func(n ast.Node)
+    extract = func(n ast.Node) {
+        switch tn := n.(type) {
+        case *ast.Text:
+            sb.Write(tn.Literal)
+        case *ast.Code:
+            sb.Write(tn.Leaf.Literal)
+        case *ast.Link:
+            for _, child := range tn.GetChildren() {
+                extract(child)
+            }
+        default:
+            for _, child := range n.GetChildren() {
+                extract(child)
+            }
+        }
+    }
+    extract(node)
+    return sb.String()
 }
 
 // extractTextFromNodes extracts text from a slice of nodes
 func extractTextFromNodes(nodes []ast.Node) string {
-	var sb strings.Builder
-	for _, node := range nodes {
-		sb.WriteString(extractText(node))
-	}
-	return sb.String()
+    var sb strings.Builder
+    for _, node := range nodes {
+        sb.WriteString(extractText(node))
+    }
+    return sb.String()
 }
 
 // extractTerraformResources extracts resources and data sources from Terraform files, skipping the 'modules' directory
 func extractTerraformResources() ([]string, []string, error) {
-	var resources []string
-	var dataSources []string
+    var resources []string
+    var dataSources []string
 
-	workspace := os.Getenv("GITHUB_WORKSPACE")
-	if workspace == "" {
-		var err error
-		workspace, err = os.Getwd()
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get current working directory: %v", err)
-		}
-	}
+    workspace := os.Getenv("GITHUB_WORKSPACE")
+    if workspace == "" {
+        var err error
+        workspace, err = os.Getwd()
+        if err != nil {
+            return nil, nil, fmt.Errorf("failed to get current working directory: %v", err)
+        }
+    }
 
-	rootPath := filepath.Join(workspace, "caller")
-	rootResources, rootDataSources, err := extractFromDirectory(rootPath)
-	if err != nil {
-		return nil, nil, err
-	}
-	resources = append(resources, rootResources...)
-	dataSources = append(dataSources, rootDataSources...)
+    rootPath := filepath.Join(workspace, "caller")
+    rootResources, rootDataSources, err := extractFromDirectory(rootPath)
+    if err != nil {
+        return nil, nil, err
+    }
+    resources = append(resources, rootResources...)
+    dataSources = append(dataSources, rootDataSources...)
 
-	return resources, dataSources, nil
+    return resources, dataSources, nil
 }
 
 // extractFromDirectory extracts resources and data sources from Terraform files in a directory, excluding the 'modules' directory
 func extractFromDirectory(dirPath string) ([]string, []string, error) {
-	var resources []string
-	var dataSources []string
+    var resources []string
+    var dataSources []string
 
-	entries, err := os.ReadDir(dirPath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error reading directory %s: %v", dirPath, err)
-	}
+    entries, err := os.ReadDir(dirPath)
+    if err != nil {
+        return nil, nil, fmt.Errorf("error reading directory %s: %v", dirPath, err)
+    }
 
-	for _, entry := range entries {
-		if entry.IsDir() {
-			if entry.Name() == "modules" {
-				continue // Skip the modules directory
-			}
-			// Optionally, you can skip other directories or process them if needed
-			subDirPath := filepath.Join(dirPath, entry.Name())
-			subResources, subDataSources, err := extractFromDirectory(subDirPath)
-			if err != nil {
-				return nil, nil, err
-			}
-			resources = append(resources, subResources...)
-			dataSources = append(dataSources, subDataSources...)
-		} else if filepath.Ext(entry.Name()) == ".tf" {
-			filePath := filepath.Join(dirPath, entry.Name())
-			fileResources, fileDataSources, err := extractFromFilePath(filePath)
-			if err != nil {
-				return nil, nil, err
-			}
-			resources = append(resources, fileResources...)
-			dataSources = append(dataSources, fileDataSources...)
-		}
-	}
+    for _, entry := range entries {
+        if entry.IsDir() {
+            if entry.Name() == "modules" {
+                continue // Skip the modules directory
+            }
+            // Optionally, you can skip other directories or process them if needed
+            subDirPath := filepath.Join(dirPath, entry.Name())
+            subResources, subDataSources, err := extractFromDirectory(subDirPath)
+            if err != nil {
+                return nil, nil, err
+            }
+            resources = append(resources, subResources...)
+            dataSources = append(dataSources, subDataSources...)
+        } else if filepath.Ext(entry.Name()) == ".tf" {
+            filePath := filepath.Join(dirPath, entry.Name())
+            fileResources, fileDataSources, err := extractFromFilePath(filePath)
+            if err != nil {
+                return nil, nil, err
+            }
+            resources = append(resources, fileResources...)
+            dataSources = append(dataSources, fileDataSources...)
+        }
+    }
 
-	return resources, dataSources, nil
+    return resources, dataSources, nil
 }
 
 // extractFromFilePath extracts resource definitions from a Terraform file
 func extractFromFilePath(filePath string) ([]string, []string, error) {
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error reading file %s: %v", filepath.Base(filePath), err)
-	}
+    content, err := os.ReadFile(filePath)
+    if err != nil {
+        return nil, nil, fmt.Errorf("error reading file %s: %v", filepath.Base(filePath), err)
+    }
 
-	parser := hclparse.NewParser()
-	file, diags := parser.ParseHCL(content, filePath)
-	if diags.HasErrors() {
-		return nil, nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), diags)
-	}
+    parser := hclparse.NewParser()
+    file, diags := parser.ParseHCL(content, filePath)
+    if diags.HasErrors() {
+        return nil, nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), diags)
+    }
 
-	// Use PartialContent to ignore unknown blocks
-	bodySchema := &hcl.BodySchema{
-		Blocks: []hcl.BlockHeaderSchema{
-			{
-				Type:       "resource",
-				LabelNames: []string{"type", "name"},
-			},
-			{
-				Type:       "data",
-				LabelNames: []string{"type", "name"},
-			},
-		},
-	}
+    // Use PartialContent to ignore unknown blocks
+    bodySchema := &hcl.BodySchema{
+        Blocks: []hcl.BlockHeaderSchema{
+            {
+                Type:       "resource",
+                LabelNames: []string{"type", "name"},
+            },
+            {
+                Type:       "data",
+                LabelNames: []string{"type", "name"},
+            },
+        },
+    }
 
-	bodyContent, _, diags := file.Body.PartialContent(bodySchema)
-	if diags.HasErrors() {
-		return nil, nil, fmt.Errorf("error getting body content in %s: %v", filepath.Base(filePath), diags)
-	}
+    bodyContent, _, diags := file.Body.PartialContent(bodySchema)
+    if diags.HasErrors() {
+        return nil, nil, fmt.Errorf("error getting body content in %s: %v", filepath.Base(filePath), diags)
+    }
 
-	var resources []string
-	var dataSources []string
+    var resources []string
+    var dataSources []string
 
-	resourceSet := make(map[string]struct{})
-	dataSourceSet := make(map[string]struct{})
+    resourceSet := make(map[string]struct{})
+    dataSourceSet := make(map[string]struct{})
 
-	for _, block := range bodyContent.Blocks {
-		if len(block.Labels) >= 2 {
-			resourceType := block.Labels[0]
-			resourceName := block.Labels[1]
-			fullName := resourceType + "." + resourceName
+    for _, block := range bodyContent.Blocks {
+        if len(block.Labels) >= 2 {
+            resourceType := block.Labels[0]
+            resourceName := block.Labels[1]
 
-			if block.Type == "resource" {
-				if _, exists := resourceSet[fullName]; !exists {
-					resourceSet[fullName] = struct{}{}
-					resources = append(resources, fullName)
-				}
-			} else if block.Type == "data" {
-				if _, exists := dataSourceSet[fullName]; !exists {
-					dataSourceSet[fullName] = struct{}{}
-					dataSources = append(dataSources, fullName)
-				}
-			}
-		}
-	}
+            // Check if resourceName is a simple identifier
+            // Skip if resourceName contains interpolation or expressions
+            if isSimpleIdentifier(resourceName) {
+                fullName := resourceType + "." + resourceName
 
-	return resources, dataSources, nil
+                if block.Type == "resource" {
+                    if _, exists := resourceSet[fullName]; !exists {
+                        resourceSet[fullName] = struct{}{}
+                        resources = append(resources, fullName)
+                    }
+                } else if block.Type == "data" {
+                    if _, exists := dataSourceSet[fullName]; !exists {
+                        dataSourceSet[fullName] = struct{}{}
+                        dataSources = append(dataSources, fullName)
+                    }
+                }
+            }
+        }
+    }
+
+    return resources, dataSources, nil
+}
+
+// isSimpleIdentifier checks if a string is a simple identifier (does not contain expressions)
+func isSimpleIdentifier(s string) bool {
+    // A simple identifier contains only letters, numbers, underscores, and dashes
+    // And does not contain interpolation or expressions
+    for _, r := range s {
+        if !(unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' || r == '-') {
+            return false
+        }
+    }
+    return true
 }
 
 // TestMarkdown runs the markdown validation tests
 func TestMarkdown(t *testing.T) {
-	readmePath := "README.md"
-	if envPath := os.Getenv("README_PATH"); envPath != "" {
-		readmePath = envPath
-	}
+    readmePath := "README.md"
+    if envPath := os.Getenv("README_PATH"); envPath != "" {
+        readmePath = envPath
+    }
 
-	validator, err := NewMarkdownValidator(readmePath)
-	if err != nil {
-		t.Fatalf("Failed to create validator: %v", err)
-	}
+    validator, err := NewMarkdownValidator(readmePath)
+    if err != nil {
+        t.Fatalf("Failed to create validator: %v", err)
+    }
 
-	errors := validator.Validate()
-	if len(errors) > 0 {
-		for _, err := range errors {
-			t.Errorf("Validation error: %v", err)
-		}
-		t.FailNow()
-	}
+    errors := validator.Validate()
+    if len(errors) > 0 {
+        for _, err := range errors {
+            t.Errorf("Validation error: %v", err)
+        }
+        t.FailNow()
+    }
 }
 
 
