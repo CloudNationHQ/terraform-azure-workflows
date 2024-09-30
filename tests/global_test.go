@@ -698,7 +698,7 @@ func extractTextFromNodes(nodes []ast.Node) string {
 	return sb.String()
 }
 
-// extractTerraformResources extracts resources and data sources from Terraform files
+// extractTerraformResources extracts resources and data sources from Terraform files, skipping the 'modules' directory
 func extractTerraformResources() ([]string, []string, error) {
 	var resources []string
 	var dataSources []string
@@ -711,51 +711,52 @@ func extractTerraformResources() ([]string, []string, error) {
 			return nil, nil, fmt.Errorf("failed to get current working directory: %v", err)
 		}
 	}
-	mainPath := filepath.Join(workspace, "caller", "main.tf")
-	specificResources, specificDataSources, err := extractFromFilePath(mainPath)
-	if err != nil && !os.IsNotExist(err) {
-		return nil, nil, err
-	}
-	resources = append(resources, specificResources...)
-	dataSources = append(dataSources, specificDataSources...)
 
-	modulesPath := filepath.Join(workspace, "caller", "modules")
-	modulesResources, modulesDataSources, err := extractRecursively(modulesPath)
+	rootPath := filepath.Join(workspace, "caller")
+	rootResources, rootDataSources, err := extractFromDirectory(rootPath)
 	if err != nil {
 		return nil, nil, err
 	}
-	resources = append(resources, modulesResources...)
-	dataSources = append(dataSources, modulesDataSources...)
+	resources = append(resources, rootResources...)
+	dataSources = append(dataSources, rootDataSources...)
 
 	return resources, dataSources, nil
 }
 
-// extractRecursively extracts resources and data sources recursively
-func extractRecursively(dirPath string) ([]string, []string, error) {
+// extractFromDirectory extracts resources and data sources from Terraform files in a directory, excluding the 'modules' directory
+func extractFromDirectory(dirPath string) ([]string, []string, error) {
 	var resources []string
 	var dataSources []string
-	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-		return resources, dataSources, nil
-	} else if err != nil {
-		return nil, nil, err
+
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error reading directory %s: %v", dirPath, err)
 	}
-	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.Mode().IsRegular() && filepath.Ext(path) == ".tf" {
-			fileResources, fileDataSources, err := extractFromFilePath(path)
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			if entry.Name() == "modules" {
+				continue // Skip the modules directory
+			}
+			// Optionally, you can skip other directories or process them if needed
+			subDirPath := filepath.Join(dirPath, entry.Name())
+			subResources, subDataSources, err := extractFromDirectory(subDirPath)
 			if err != nil {
-				return err
+				return nil, nil, err
+			}
+			resources = append(resources, subResources...)
+			dataSources = append(dataSources, subDataSources...)
+		} else if filepath.Ext(entry.Name()) == ".tf" {
+			filePath := filepath.Join(dirPath, entry.Name())
+			fileResources, fileDataSources, err := extractFromFilePath(filePath)
+			if err != nil {
+				return nil, nil, err
 			}
 			resources = append(resources, fileResources...)
 			dataSources = append(dataSources, fileDataSources...)
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, nil, err
 	}
+
 	return resources, dataSources, nil
 }
 
