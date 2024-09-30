@@ -502,11 +502,16 @@ func extractTerraformItems(filePath string, blockType string) ([]string, error) 
 		return nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), diags)
 	}
 
-	bodyContent, diags := file.Body.Content(&hcl.BodySchema{
+	bodySchema := &hcl.BodySchema{
 		Blocks: []hcl.BlockHeaderSchema{
-			{Type: blockType},
+			{
+				Type:       blockType,
+				LabelNames: []string{"name"},
+			},
 		},
-	})
+	}
+
+	bodyContent, _, diags := file.Body.PartialContent(bodySchema)
 	if diags.HasErrors() {
 		return nil, fmt.Errorf("error getting body content in %s: %v", filepath.Base(filePath), diags)
 	}
@@ -749,12 +754,21 @@ func extractFromFilePath(filePath string) ([]string, []string, error) {
 		return nil, nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), diags)
 	}
 
-	bodyContent, diags := file.Body.Content(&hcl.BodySchema{
+	bodySchema := &hcl.BodySchema{
 		Blocks: []hcl.BlockHeaderSchema{
-			{Type: "resource"},
-			{Type: "data"},
+			{
+				Type:       "resource",
+				LabelNames: []string{"type", "name"},
+			},
+			{
+				Type:       "data",
+				LabelNames: []string{"type", "name"},
+			},
+			// Include other block types if necessary
 		},
-	})
+	}
+
+	bodyContent, _, diags := file.Body.PartialContent(bodySchema)
 	if diags.HasErrors() {
 		return nil, nil, fmt.Errorf("error getting body content in %s: %v", filepath.Base(filePath), diags)
 	}
@@ -808,6 +822,7 @@ func TestMarkdown(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 
 //package main
 
