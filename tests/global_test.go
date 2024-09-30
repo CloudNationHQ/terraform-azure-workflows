@@ -623,6 +623,10 @@ func extractReadmeResources(data string) ([]string, []string, error) {
 										name = strings.TrimSpace(name)
 										name = strings.Trim(name, "[]") // Remove brackets
 										name = strings.TrimSpace(name)
+										// Extract the resource name from the link text if present
+										if strings.HasPrefix(name, "[") && strings.Contains(name, "]") {
+											name = name[1:strings.Index(name, "]")]
+										}
 										resourceType := extractTextFromNodes(typeCell.GetChildren())
 										resourceType = strings.TrimSpace(resourceType)
 										if strings.EqualFold(resourceType, "resource") {
@@ -754,6 +758,7 @@ func extractFromFilePath(filePath string) ([]string, []string, error) {
 		return nil, nil, fmt.Errorf("error parsing HCL in %s: %v", filepath.Base(filePath), diags)
 	}
 
+	// Use PartialContent to ignore unknown blocks
 	bodySchema := &hcl.BodySchema{
 		Blocks: []hcl.BlockHeaderSchema{
 			{
@@ -764,7 +769,6 @@ func extractFromFilePath(filePath string) ([]string, []string, error) {
 				Type:       "data",
 				LabelNames: []string{"type", "name"},
 			},
-			// Include other block types if necessary
 		},
 	}
 
