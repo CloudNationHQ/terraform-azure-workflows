@@ -199,11 +199,15 @@ func extractTableHeaders(table *ast.Table) ([]string, error) {
 		return nil, fmt.Errorf("table has no header row")
 	}
 
-	// Extract headers from the header row
-	for _, cell := range headerNode.GetChildren() {
-		if tableCell, ok := cell.(*ast.TableCell); ok {
-			headerText := strings.TrimSpace(extractTextFromNodes(tableCell.GetChildren()))
-			headers = append(headers, headerText)
+	// The header row is under TableHead
+	for _, rowNode := range headerNode.GetChildren() {
+		if row, ok := rowNode.(*ast.TableRow); ok {
+			for _, cellNode := range row.GetChildren() {
+				if cell, ok := cellNode.(*ast.TableCell); ok {
+					headerText := strings.TrimSpace(extractTextFromNodes(cell.GetChildren()))
+					headers = append(headers, headerText)
+				}
+			}
 		}
 	}
 
@@ -564,20 +568,27 @@ func extractMarkdownSectionItems(data, sectionName string) ([]string, error) {
 		if inTargetSection {
 			if table, ok := node.(*ast.Table); ok && entering {
 				// Extract items from the table
+				var bodyNode *ast.TableBody
 				for _, child := range table.GetChildren() {
 					if body, ok := child.(*ast.TableBody); ok {
-						for _, rowChild := range body.GetChildren() {
-							if tableRow, ok := rowChild.(*ast.TableRow); ok {
-								cells := tableRow.GetChildren()
-								if len(cells) > 0 {
-									if cell, ok := cells[0].(*ast.TableCell); ok {
-										item := extractTextFromNodes(cell.GetChildren())
-										item = strings.TrimSpace(item)
-										item = strings.Trim(item, "`") // Remove backticks if present
-										item = strings.TrimSpace(item)
-										items = append(items, item)
-									}
-								}
+						bodyNode = body
+						break
+					}
+				}
+				if bodyNode == nil {
+					return ast.GoToNext
+				}
+
+				for _, rowChild := range bodyNode.GetChildren() {
+					if tableRow, ok := rowChild.(*ast.TableRow); ok {
+						cells := tableRow.GetChildren()
+						if len(cells) > 0 {
+							if cell, ok := cells[0].(*ast.TableCell); ok {
+								item := extractTextFromNodes(cell.GetChildren())
+								item = strings.TrimSpace(item)
+								item = strings.Trim(item, "`") // Remove backticks if present
+								item = strings.TrimSpace(item)
+								items = append(items, item)
 							}
 						}
 					}
@@ -619,27 +630,34 @@ func extractReadmeResources(data string) ([]string, []string, error) {
 		if inResourcesSection {
 			if table, ok := node.(*ast.Table); ok && entering {
 				// Extract items from the table
+				var bodyNode *ast.TableBody
 				for _, child := range table.GetChildren() {
 					if body, ok := child.(*ast.TableBody); ok {
-						for _, rowChild := range body.GetChildren() {
-							if tableRow, ok := rowChild.(*ast.TableRow); ok {
-								cells := tableRow.GetChildren()
-								if len(cells) >= 2 {
-									nameCell, ok1 := cells[0].(*ast.TableCell)
-									typeCell, ok2 := cells[1].(*ast.TableCell)
-									if ok1 && ok2 {
-										name := extractTextFromNodes(nameCell.GetChildren())
-										name = strings.TrimSpace(name)
-										name = strings.Trim(name, "[]") // Remove brackets
-										name = strings.TrimSpace(name)
-										resourceType := extractTextFromNodes(typeCell.GetChildren())
-										resourceType = strings.TrimSpace(resourceType)
-										if strings.EqualFold(resourceType, "resource") {
-											resources = append(resources, name)
-										} else if strings.EqualFold(resourceType, "data source") {
-											dataSources = append(dataSources, name)
-										}
-									}
+						bodyNode = body
+						break
+					}
+				}
+				if bodyNode == nil {
+					return ast.GoToNext
+				}
+
+				for _, rowChild := range bodyNode.GetChildren() {
+					if tableRow, ok := rowChild.(*ast.TableRow); ok {
+						cells := tableRow.GetChildren()
+						if len(cells) >= 2 {
+							nameCell, ok1 := cells[0].(*ast.TableCell)
+							typeCell, ok2 := cells[1].(*ast.TableCell)
+							if ok1 && ok2 {
+								name := extractTextFromNodes(nameCell.GetChildren())
+								name = strings.TrimSpace(name)
+								name = strings.Trim(name, "[]") // Remove brackets
+								name = strings.TrimSpace(name)
+								resourceType := extractTextFromNodes(typeCell.GetChildren())
+								resourceType = strings.TrimSpace(resourceType)
+								if strings.EqualFold(resourceType, "resource") {
+									resources = append(resources, name)
+								} else if strings.EqualFold(resourceType, "data source") {
+									dataSources = append(dataSources, name)
 								}
 							}
 						}
@@ -823,7 +841,6 @@ func TestMarkdown(t *testing.T) {
 		}
 	}
 }
-
 
 //package main
 
