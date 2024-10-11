@@ -729,37 +729,7 @@ func extractTerraformResources() ([]string, []string, error) {
     return resources, dataSources, nil
 }
 
-//func extractTerraformResources() ([]string, []string, error) {
-	//var resources []string
-	//var dataSources []string
-
-	//workspace := os.Getenv("GITHUB_WORKSPACE")
-	//if workspace == "" {
-		//var err error
-		//workspace, err = os.Getwd()
-		//if err != nil {
-			//return nil, nil, fmt.Errorf("failed to get current working directory: %v", err)
-		//}
-	//}
-	//mainPath := filepath.Join(workspace, "caller", "main.tf")
-	//specificResources, specificDataSources, err := extractFromFilePath(mainPath)
-	//if err != nil && !os.IsNotExist(err) {
-		//return nil, nil, err
-	//}
-	//resources = append(resources, specificResources...)
-	//dataSources = append(dataSources, specificDataSources...)
-
-	//modulesPath := filepath.Join(workspace, "caller", "modules")
-	//modulesResources, modulesDataSources, err := extractRecursively(modulesPath)
-	//if err != nil {
-		//return nil, nil, err
-	//}
-	//resources = append(resources, modulesResources...)
-	//dataSources = append(dataSources, modulesDataSources...)
-
-	//return resources, dataSources, nil
-//}
-
+// skip the modules directory
 func extractRecursively(dirPath string) ([]string, []string, error) {
     var resources []string
     var dataSources []string
@@ -793,35 +763,6 @@ func extractRecursively(dirPath string) ([]string, []string, error) {
     }
     return resources, dataSources, nil
 }
-
-// extractRecursively extracts resources and data sources recursively
-//func extractRecursively(dirPath string) ([]string, []string, error) {
-	//var resources []string
-	//var dataSources []string
-	//if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-		//return resources, dataSources, nil
-	//} else if err != nil {
-		//return nil, nil, err
-	//}
-	//err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
-		//if err != nil {
-			//return err
-		//}
-		//if info.Mode().IsRegular() && filepath.Ext(path) == ".tf" {
-			//fileResources, fileDataSources, err := extractFromFilePath(path)
-			//if err != nil {
-				//return err
-			//}
-			//resources = append(resources, fileResources...)
-			//dataSources = append(dataSources, fileDataSources...)
-		//}
-		//return nil
-	//})
-	//if err != nil {
-		//return nil, nil, err
-	//}
-	//return resources, dataSources, nil
-//}
 
 // extractFromFilePath extracts resources and data sources from a Terraform file
 func extractFromFilePath(filePath string) ([]string, []string, error) {
