@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.1.1...v1.2.0) (2024-10-11)
+
+
+### Features
+
+* update documentation ([5b1574f](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/5b1574fbbb5ad214f90965e779c502d93548db8f))
+
 ## [1.1.1](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.1.0...v1.1.1) (2024-09-25)
 
 
