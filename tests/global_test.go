@@ -241,28 +241,25 @@ func validateColumns(header string, required, optional, actual []string) []error
         validColumns[col] = true
     }
 
-    // Create a map to track found required columns
-    foundRequired := make(map[string]bool)
+    // Track found and invalid columns
+    foundColumns := make(map[string]bool)
+    hasInvalidColumns := false
 
-    // Single pass through actual columns
+    // First check for unexpected columns
     for _, act := range actual {
-        // Check if it's a valid column
         if !validColumns[act] {
+            hasInvalidColumns = true
             errors = append(errors, formatError("unexpected column '%s' in table under header: %s", act, header))
-        } else {
-            // If it's a required column, mark it as found
-            for _, req := range required {
-                if act == req {
-                    foundRequired[req] = true
-                }
-            }
         }
+        foundColumns[act] = true
     }
 
-    // Check if any required columns were not found
-    for _, req := range required {
-        if !foundRequired[req] {
-            errors = append(errors, formatError("missing required column '%s' in table under header: %s", req, header))
+    // Only check for missing required columns if there were no invalid columns
+    if !hasInvalidColumns {
+        for _, req := range required {
+            if !foundColumns[req] {
+                errors = append(errors, formatError("missing required column '%s' in table under header: %s", req, header))
+            }
         }
     }
 
