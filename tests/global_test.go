@@ -75,9 +75,15 @@ func (mv *MarkdownValidator) Validate() []error {
 }
 
 // Section represents a markdown section
+//type Section struct {
+//Header  string
+//Columns []string
+//}
+
 type Section struct {
-	Header  string
-	Columns []string
+	Header       string
+	RequiredCols []string
+	OptionalCols []string
 }
 
 // SectionValidator validates markdown sections
@@ -91,18 +97,20 @@ type SectionValidator struct {
 func NewSectionValidator(data string) *SectionValidator {
 	sections := []Section{
 		{Header: "Goals"},
-		{Header: "Resources", Columns: []string{"Name", "Type"}},
-		{Header: "Providers", Columns: []string{"Name", "Version"}},
-		{Header: "Requirements", Columns: []string{"Name", "Version"}},
-		{Header: "Inputs", Columns: []string{"Name", "Description", "Type", "Default", "Required"}},
-		{Header: "Outputs", Columns: []string{"Name", "Description"}},
+		{Header: "Resources", RequiredCols: []string{"Name", "Type"}},
+		{Header: "Providers", RequiredCols: []string{"Name", "Version"}},
+		{Header: "Requirements", RequiredCols: []string{"Name", "Version"}},
+		{Header: "Inputs",
+			RequiredCols: []string{"Name", "Description", "Required"},
+			OptionalCols: []string{"Type", "Default"},
+		},
+		{Header: "Outputs", RequiredCols: []string{"Name", "Description"}},
 		{Header: "Features"},
 		{Header: "Testing"},
 		{Header: "Authors"},
 		{Header: "License"},
 	}
 
-	// Parse the markdown content into an AST
 	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
 	p := parser.NewWithExtensions(extensions)
 	rootNode := markdown.Parse([]byte(data), p)
@@ -113,6 +121,32 @@ func NewSectionValidator(data string) *SectionValidator {
 		rootNode: rootNode,
 	}
 }
+
+//func NewSectionValidator(data string) *SectionValidator {
+//sections := []Section{
+//{Header: "Goals"},
+//{Header: "Resources", Columns: []string{"Name", "Type"}},
+//{Header: "Providers", Columns: []string{"Name", "Version"}},
+//{Header: "Requirements", Columns: []string{"Name", "Version"}},
+//{Header: "Inputs", Columns: []string{"Name", "Description", "Type", "Default", "Required"}},
+//{Header: "Outputs", Columns: []string{"Name", "Description"}},
+//{Header: "Features"},
+//{Header: "Testing"},
+//{Header: "Authors"},
+//{Header: "License"},
+//}
+
+//// Parse the markdown content into an AST
+//extensions := parser.CommonExtensions | parser.AutoHeadingIDs
+//p := parser.NewWithExtensions(extensions)
+//rootNode := markdown.Parse([]byte(data), p)
+
+//return &SectionValidator{
+//data:     data,
+//sections: sections,
+//rootNode: rootNode,
+//}
+//}
 
 // Validate validates the sections in the markdown
 func (sv *SectionValidator) Validate() []error {
@@ -128,23 +162,20 @@ func (s Section) validate(rootNode ast.Node) []error {
 	var errors []error
 	found := false
 
-	// Traverse the AST to find the section header
 	ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
 		if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
 			text := strings.TrimSpace(extractText(heading))
 			if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
 				found = true
 
-				if len(s.Columns) > 0 {
-					// Check for the table after the header
+				if len(s.RequiredCols) > 0 {
 					nextNode := getNextSibling(node)
 					if table, ok := nextNode.(*ast.Table); ok {
-						// Extract table headers
 						actualHeaders, err := extractTableHeaders(table)
 						if err != nil {
 							errors = append(errors, err)
-						} else if !equalSlices(actualHeaders, s.Columns) {
-							errors = append(errors, compareColumns(s.Header, s.Columns, actualHeaders))
+						} else {
+							errors = append(errors, validateColumns(s.Header, s.RequiredCols, s.OptionalCols, actualHeaders)...)
 						}
 					} else {
 						errors = append(errors, formatError("missing table after header: %s", s.Header))
@@ -162,6 +193,90 @@ func (s Section) validate(rootNode ast.Node) []error {
 
 	return errors
 }
+
+func validateColumns(header string, required, optional, actual []string) []error {
+	var errors []error
+
+	// Check that all required columns are present
+	for _, req := range required {
+		found := false
+		for _, act := range actual {
+			if req == act {
+				found = true
+				break
+			}
+		}
+		if !found {
+			errors = append(errors, formatError("missing required column '%s' in table under header: %s", req, header))
+		}
+	}
+
+	// Check that all actual columns are either required or optional
+	for _, act := range actual {
+		isValid := false
+		// Check in required columns
+		for _, req := range required {
+			if act == req {
+				isValid = true
+				break
+			}
+		}
+		// If not in required, check in optional columns
+		if !isValid {
+			for _, opt := range optional {
+				if act == opt {
+					isValid = true
+					break
+				}
+			}
+		}
+		if !isValid {
+			errors = append(errors, formatError("unexpected column '%s' in table under header: %s", act, header))
+		}
+	}
+
+	return errors
+}
+
+// validate checks if a section and its columns are correctly formatted
+//func (s Section) validate(rootNode ast.Node) []error {
+//var errors []error
+//found := false
+
+//// Traverse the AST to find the section header
+//ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
+//if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
+//text := strings.TrimSpace(extractText(heading))
+//if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
+//found = true
+
+//if len(s.Columns) > 0 {
+//// Check for the table after the header
+//nextNode := getNextSibling(node)
+//if table, ok := nextNode.(*ast.Table); ok {
+//// Extract table headers
+//actualHeaders, err := extractTableHeaders(table)
+//if err != nil {
+//errors = append(errors, err)
+//} else if !equalSlices(actualHeaders, s.Columns) {
+//errors = append(errors, compareColumns(s.Header, s.Columns, actualHeaders))
+//}
+//} else {
+//errors = append(errors, formatError("missing table after header: %s", s.Header))
+//}
+//}
+//return ast.SkipChildren
+//}
+//}
+//return ast.GoToNext
+//})
+
+//if !found {
+//errors = append(errors, compareHeaders(s.Header, ""))
+//}
+
+//return errors
+//}
 
 // getNextSibling returns the next sibling of a node
 func getNextSibling(node ast.Node) ast.Node {
