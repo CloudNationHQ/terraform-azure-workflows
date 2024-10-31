@@ -585,22 +585,22 @@ func equalSlices(a, b []string) bool {
 }
 
 // compareColumns compares expected and actual table columns
-func compareColumns(header string, expected, actual []string) error {
-	var mismatches []string
-	for i := 0; i < len(expected) || i < len(actual); i++ {
-		var exp, act string
-		if i < len(expected) {
-			exp = expected[i]
-		}
-		if i < len(actual) {
-			act = actual[i]
-		}
-		if exp != act {
-			mismatches = append(mismatches, fmt.Sprintf("expected '%s', found '%s'", exp, act))
-		}
-	}
-	return formatError("table under header: %s has incorrect column names:\n  %s", header, strings.Join(mismatches, "\n  "))
-}
+//func compareColumns(header string, expected, actual []string) error {
+	//var mismatches []string
+	//for i := 0; i < len(expected) || i < len(actual); i++ {
+		//var exp, act string
+		//if i < len(expected) {
+			//exp = expected[i]
+		//}
+		//if i < len(actual) {
+			//act = actual[i]
+		//}
+		//if exp != act {
+			//mismatches = append(mismatches, fmt.Sprintf("expected '%s', found '%s'", exp, act))
+		//}
+	//}
+	//return formatError("table under header: %s has incorrect column names:\n  %s", header, strings.Join(mismatches, "\n  "))
+//}
 
 // findMissingItems finds items in a that are not in b
 func findMissingItems(a, b []string) []string {
