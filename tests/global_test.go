@@ -74,12 +74,6 @@ func (mv *MarkdownValidator) Validate() []error {
 	return allErrors
 }
 
-// Section represents a markdown section
-//type Section struct {
-//Header  string
-//Columns []string
-//}
-
 type Section struct {
 	Header       string
 	RequiredCols []string
@@ -122,32 +116,6 @@ func NewSectionValidator(data string) *SectionValidator {
 	}
 }
 
-//func NewSectionValidator(data string) *SectionValidator {
-//sections := []Section{
-//{Header: "Goals"},
-//{Header: "Resources", Columns: []string{"Name", "Type"}},
-//{Header: "Providers", Columns: []string{"Name", "Version"}},
-//{Header: "Requirements", Columns: []string{"Name", "Version"}},
-//{Header: "Inputs", Columns: []string{"Name", "Description", "Type", "Default", "Required"}},
-//{Header: "Outputs", Columns: []string{"Name", "Description"}},
-//{Header: "Features"},
-//{Header: "Testing"},
-//{Header: "Authors"},
-//{Header: "License"},
-//}
-
-//// Parse the markdown content into an AST
-//extensions := parser.CommonExtensions | parser.AutoHeadingIDs
-//p := parser.NewWithExtensions(extensions)
-//rootNode := markdown.Parse([]byte(data), p)
-
-//return &SectionValidator{
-//data:     data,
-//sections: sections,
-//rootNode: rootNode,
-//}
-//}
-
 // Validate validates the sections in the markdown
 func (sv *SectionValidator) Validate() []error {
 	var allErrors []error
@@ -159,196 +127,77 @@ func (sv *SectionValidator) Validate() []error {
 
 // validate checks if a section and its columns are correctly formatted
 func (s Section) validate(rootNode ast.Node) []error {
-   var errors []error
-   found := false
+	var errors []error
+	found := false
 
-   ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
-       if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
-           text := strings.TrimSpace(extractText(heading))
-           if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
-               found = true
+	ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
+		if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
+			text := strings.TrimSpace(extractText(heading))
+			if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
+				found = true
 
-               if len(s.RequiredCols) > 0 || len(s.OptionalCols) > 0 {
-                   nextNode := getNextSibling(node)
-                   if table, ok := nextNode.(*ast.Table); ok {
-                       actualHeaders, err := extractTableHeaders(table)
-                       if err != nil {
-                           errors = append(errors, err)
-                       } else {
-                           errors = append(errors, validateColumns(s.Header, s.RequiredCols, s.OptionalCols, actualHeaders)...)
-                       }
-                   } else {
-                       errors = append(errors, formatError("missing table after header: %s", s.Header))
-                   }
-               }
-               return ast.SkipChildren
-           }
-       }
-       return ast.GoToNext
-   })
+				if len(s.RequiredCols) > 0 || len(s.OptionalCols) > 0 {
+					nextNode := getNextSibling(node)
+					if table, ok := nextNode.(*ast.Table); ok {
+						actualHeaders, err := extractTableHeaders(table)
+						if err != nil {
+							errors = append(errors, err)
+						} else {
+							errors = append(errors, validateColumns(s.Header, s.RequiredCols, s.OptionalCols, actualHeaders)...)
+						}
+					} else {
+						errors = append(errors, formatError("missing table after header: %s", s.Header))
+					}
+				}
+				return ast.SkipChildren
+			}
+		}
+		return ast.GoToNext
+	})
 
-   if !found {
-       errors = append(errors, compareHeaders(s.Header, ""))
-   }
+	if !found {
+		errors = append(errors, compareHeaders(s.Header, ""))
+	}
 
-   return errors
+	return errors
 }
-//func (s Section) validate(rootNode ast.Node) []error {
-	//var errors []error
-	//found := false
-
-	//ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
-		//if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
-			//text := strings.TrimSpace(extractText(heading))
-			//if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
-				//found = true
-
-				//if len(s.RequiredCols) > 0 {
-					//nextNode := getNextSibling(node)
-					//if table, ok := nextNode.(*ast.Table); ok {
-						//actualHeaders, err := extractTableHeaders(table)
-						//if err != nil {
-							//errors = append(errors, err)
-						//} else {
-							//errors = append(errors, validateColumns(s.Header, s.RequiredCols, s.OptionalCols, actualHeaders)...)
-						//}
-					//} else {
-						//errors = append(errors, formatError("missing table after header: %s", s.Header))
-					//}
-				//}
-				//return ast.SkipChildren
-			//}
-		//}
-		//return ast.GoToNext
-	//})
-
-	//if !found {
-		//errors = append(errors, compareHeaders(s.Header, ""))
-	//}
-
-	//return errors
-//}
 
 func validateColumns(header string, required, optional, actual []string) []error {
-    var errors []error
+	var errors []error
 
-    // Create a map of valid columns
-    validColumns := make(map[string]bool)
-    for _, col := range required {
-        validColumns[col] = true
-    }
-    for _, col := range optional {
-        validColumns[col] = true
-    }
+	// Create a map of valid columns
+	validColumns := make(map[string]bool)
+	for _, col := range required {
+		validColumns[col] = true
+	}
+	for _, col := range optional {
+		validColumns[col] = true
+	}
 
-    // Track found and invalid columns
-    foundColumns := make(map[string]bool)
-    hasInvalidColumns := false
+	// Track found and invalid columns
+	foundColumns := make(map[string]bool)
+	hasInvalidColumns := false
 
-    // First check for unexpected columns
-    for _, act := range actual {
-        if !validColumns[act] {
-            hasInvalidColumns = true
-            errors = append(errors, formatError("unexpected column '%s' in table under header: %s", act, header))
-        }
-        foundColumns[act] = true
-    }
+	// First check for unexpected columns
+	for _, act := range actual {
+		if !validColumns[act] {
+			hasInvalidColumns = true
+			errors = append(errors, formatError("unexpected column '%s' in table under header: %s", act, header))
+		}
+		foundColumns[act] = true
+	}
 
-    // Only check for missing required columns if there were no invalid columns
-    if !hasInvalidColumns {
-        for _, req := range required {
-            if !foundColumns[req] {
-                errors = append(errors, formatError("missing required column '%s' in table under header: %s", req, header))
-            }
-        }
-    }
+	// Only check for missing required columns if there were no invalid columns
+	if !hasInvalidColumns {
+		for _, req := range required {
+			if !foundColumns[req] {
+				errors = append(errors, formatError("missing required column '%s' in table under header: %s", req, header))
+			}
+		}
+	}
 
-    return errors
+	return errors
 }
-
-//func validateColumns(header string, required, optional, actual []string) []error {
-	//var errors []error
-
-	//// Check that all required columns are present
-	//for _, req := range required {
-		//found := false
-		//for _, act := range actual {
-			//if req == act {
-				//found = true
-				//break
-			//}
-		//}
-		//if !found {
-			//errors = append(errors, formatError("missing required column '%s' in table under header: %s", req, header))
-		//}
-	//}
-
-	//// Check that all actual columns are either required or optional
-	//for _, act := range actual {
-		//isValid := false
-		//// Check in required columns
-		//for _, req := range required {
-			//if act == req {
-				//isValid = true
-				//break
-			//}
-		//}
-		//// If not in required, check in optional columns
-		//if !isValid {
-			//for _, opt := range optional {
-				//if act == opt {
-					//isValid = true
-					//break
-				//}
-			//}
-		//}
-		//if !isValid {
-			//errors = append(errors, formatError("unexpected column '%s' in table under header: %s", act, header))
-		//}
-	//}
-
-	//return errors
-//}
-
-// validate checks if a section and its columns are correctly formatted
-//func (s Section) validate(rootNode ast.Node) []error {
-//var errors []error
-//found := false
-
-//// Traverse the AST to find the section header
-//ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
-//if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
-//text := strings.TrimSpace(extractText(heading))
-//if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
-//found = true
-
-//if len(s.Columns) > 0 {
-//// Check for the table after the header
-//nextNode := getNextSibling(node)
-//if table, ok := nextNode.(*ast.Table); ok {
-//// Extract table headers
-//actualHeaders, err := extractTableHeaders(table)
-//if err != nil {
-//errors = append(errors, err)
-//} else if !equalSlices(actualHeaders, s.Columns) {
-//errors = append(errors, compareColumns(s.Header, s.Columns, actualHeaders))
-//}
-//} else {
-//errors = append(errors, formatError("missing table after header: %s", s.Header))
-//}
-//}
-//return ast.SkipChildren
-//}
-//}
-//return ast.GoToNext
-//})
-
-//if !found {
-//errors = append(errors, compareHeaders(s.Header, ""))
-//}
-
-//return errors
-//}
 
 // getNextSibling returns the next sibling of a node
 func getNextSibling(node ast.Node) ast.Node {
@@ -621,24 +470,6 @@ func equalSlices(a, b []string) bool {
 	return true
 }
 
-// compareColumns compares expected and actual table columns
-//func compareColumns(header string, expected, actual []string) error {
-	//var mismatches []string
-	//for i := 0; i < len(expected) || i < len(actual); i++ {
-		//var exp, act string
-		//if i < len(expected) {
-			//exp = expected[i]
-		//}
-		//if i < len(actual) {
-			//act = actual[i]
-		//}
-		//if exp != act {
-			//mismatches = append(mismatches, fmt.Sprintf("expected '%s', found '%s'", exp, act))
-		//}
-	//}
-	//return formatError("table under header: %s has incorrect column names:\n  %s", header, strings.Join(mismatches, "\n  "))
-//}
-
 // findMissingItems finds items in a that are not in b
 func findMissingItems(a, b []string) []string {
 	bSet := make(map[string]struct{}, len(b))
@@ -687,27 +518,22 @@ func extractTerraformItems(filePath string, blockType string) ([]string, error) 
 	var items []string
 	body := file.Body
 
-	// Initialize diagnostics variable
 	var diags hcl.Diagnostics
 
-	// Use PartialContent to extract only the specified block type
 	hclContent, _, contentDiags := body.PartialContent(&hcl.BodySchema{
 		Blocks: []hcl.BlockHeaderSchema{
 			{Type: blockType, LabelNames: []string{"name"}},
 		},
 	})
 
-	// Append diagnostics
 	diags = append(diags, contentDiags...)
 
-	// Filter out diagnostics related to unsupported block types
 	diags = filterUnsupportedBlockDiagnostics(diags)
 	if diags.HasErrors() {
 		return nil, fmt.Errorf("error getting content from %s: %v", filepath.Base(filePath), diags)
 	}
 
 	if hclContent == nil {
-		// No relevant blocks found
 		return items, nil
 	}
 
@@ -780,7 +606,7 @@ func extractMarkdownSectionItems(data, sectionName string) ([]string, error) {
 						}
 					}
 				}
-				inTargetSection = false // We've processed the table, exit the section
+				inTargetSection = false
 				return ast.SkipChildren
 			}
 		}
