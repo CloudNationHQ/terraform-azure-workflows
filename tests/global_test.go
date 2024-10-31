@@ -230,48 +230,88 @@ func (s Section) validate(rootNode ast.Node) []error {
 //}
 
 func validateColumns(header string, required, optional, actual []string) []error {
-	var errors []error
+    var errors []error
 
-	// Check that all required columns are present
-	for _, req := range required {
-		found := false
-		for _, act := range actual {
-			if req == act {
-				found = true
-				break
-			}
-		}
-		if !found {
-			errors = append(errors, formatError("missing required column '%s' in table under header: %s", req, header))
-		}
-	}
+    // Create a map of valid columns
+    validColumns := make(map[string]bool)
+    for _, col := range required {
+        validColumns[col] = true
+    }
+    for _, col := range optional {
+        validColumns[col] = true
+    }
 
-	// Check that all actual columns are either required or optional
-	for _, act := range actual {
-		isValid := false
-		// Check in required columns
-		for _, req := range required {
-			if act == req {
-				isValid = true
-				break
-			}
-		}
-		// If not in required, check in optional columns
-		if !isValid {
-			for _, opt := range optional {
-				if act == opt {
-					isValid = true
-					break
-				}
-			}
-		}
-		if !isValid {
-			errors = append(errors, formatError("unexpected column '%s' in table under header: %s", act, header))
-		}
-	}
+    // Create a map to track found required columns
+    foundRequired := make(map[string]bool)
 
-	return errors
+    // Single pass through actual columns
+    for _, act := range actual {
+        // Check if it's a valid column
+        if !validColumns[act] {
+            errors = append(errors, formatError("unexpected column '%s' in table under header: %s", act, header))
+        } else {
+            // If it's a required column, mark it as found
+            for _, req := range required {
+                if act == req {
+                    foundRequired[req] = true
+                }
+            }
+        }
+    }
+
+    // Check if any required columns were not found
+    for _, req := range required {
+        if !foundRequired[req] {
+            errors = append(errors, formatError("missing required column '%s' in table under header: %s", req, header))
+        }
+    }
+
+    return errors
 }
+
+//func validateColumns(header string, required, optional, actual []string) []error {
+	//var errors []error
+
+	//// Check that all required columns are present
+	//for _, req := range required {
+		//found := false
+		//for _, act := range actual {
+			//if req == act {
+				//found = true
+				//break
+			//}
+		//}
+		//if !found {
+			//errors = append(errors, formatError("missing required column '%s' in table under header: %s", req, header))
+		//}
+	//}
+
+	//// Check that all actual columns are either required or optional
+	//for _, act := range actual {
+		//isValid := false
+		//// Check in required columns
+		//for _, req := range required {
+			//if act == req {
+				//isValid = true
+				//break
+			//}
+		//}
+		//// If not in required, check in optional columns
+		//if !isValid {
+			//for _, opt := range optional {
+				//if act == opt {
+					//isValid = true
+					//break
+				//}
+			//}
+		//}
+		//if !isValid {
+			//errors = append(errors, formatError("unexpected column '%s' in table under header: %s", act, header))
+		//}
+	//}
+
+	//return errors
+//}
 
 // validate checks if a section and its columns are correctly formatted
 //func (s Section) validate(rootNode ast.Node) []error {
