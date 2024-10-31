@@ -159,40 +159,75 @@ func (sv *SectionValidator) Validate() []error {
 
 // validate checks if a section and its columns are correctly formatted
 func (s Section) validate(rootNode ast.Node) []error {
-	var errors []error
-	found := false
+   var errors []error
+   found := false
 
-	ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
-		if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
-			text := strings.TrimSpace(extractText(heading))
-			if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
-				found = true
+   ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
+       if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
+           text := strings.TrimSpace(extractText(heading))
+           if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
+               found = true
 
-				if len(s.RequiredCols) > 0 {
-					nextNode := getNextSibling(node)
-					if table, ok := nextNode.(*ast.Table); ok {
-						actualHeaders, err := extractTableHeaders(table)
-						if err != nil {
-							errors = append(errors, err)
-						} else {
-							errors = append(errors, validateColumns(s.Header, s.RequiredCols, s.OptionalCols, actualHeaders)...)
-						}
-					} else {
-						errors = append(errors, formatError("missing table after header: %s", s.Header))
-					}
-				}
-				return ast.SkipChildren
-			}
-		}
-		return ast.GoToNext
-	})
+               if len(s.RequiredCols) > 0 || len(s.OptionalCols) > 0 {
+                   nextNode := getNextSibling(node)
+                   if table, ok := nextNode.(*ast.Table); ok {
+                       actualHeaders, err := extractTableHeaders(table)
+                       if err != nil {
+                           errors = append(errors, err)
+                       } else {
+                           errors = append(errors, validateColumns(s.Header, s.RequiredCols, s.OptionalCols, actualHeaders)...)
+                       }
+                   } else {
+                       errors = append(errors, formatError("missing table after header: %s", s.Header))
+                   }
+               }
+               return ast.SkipChildren
+           }
+       }
+       return ast.GoToNext
+   })
 
-	if !found {
-		errors = append(errors, compareHeaders(s.Header, ""))
-	}
+   if !found {
+       errors = append(errors, compareHeaders(s.Header, ""))
+   }
 
-	return errors
+   return errors
 }
+//func (s Section) validate(rootNode ast.Node) []error {
+	//var errors []error
+	//found := false
+
+	//ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
+		//if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
+			//text := strings.TrimSpace(extractText(heading))
+			//if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
+				//found = true
+
+				//if len(s.RequiredCols) > 0 {
+					//nextNode := getNextSibling(node)
+					//if table, ok := nextNode.(*ast.Table); ok {
+						//actualHeaders, err := extractTableHeaders(table)
+						//if err != nil {
+							//errors = append(errors, err)
+						//} else {
+							//errors = append(errors, validateColumns(s.Header, s.RequiredCols, s.OptionalCols, actualHeaders)...)
+						//}
+					//} else {
+						//errors = append(errors, formatError("missing table after header: %s", s.Header))
+					//}
+				//}
+				//return ast.SkipChildren
+			//}
+		//}
+		//return ast.GoToNext
+	//})
+
+	//if !found {
+		//errors = append(errors, compareHeaders(s.Header, ""))
+	//}
+
+	//return errors
+//}
 
 func validateColumns(header string, required, optional, actual []string) []error {
 	var errors []error
