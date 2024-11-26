@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.1.1...v1.2.0) (2024-11-26)
+
+
+### Features
+
+* **deps:** bump github.com/hashicorp/hcl/v2 in /tests ([#34](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/34)) ([8137e3e](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/8137e3e64836cfe461a18d115c496b626ca4894b))
+* update documentation ([5b1574f](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/5b1574fbbb5ad214f90965e779c502d93548db8f))
+
 ## [1.1.1](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.1.0...v1.1.1) (2024-09-25)
 
 
