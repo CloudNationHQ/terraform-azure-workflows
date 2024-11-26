@@ -91,6 +91,7 @@ type SectionValidator struct {
 func NewSectionValidator(data string) *SectionValidator {
 	sections := []Section{
 		{Header: "Goals"},
+		{Header: "Non-Goals"},
 		{Header: "Resources", RequiredCols: []string{"Name", "Type"}},
 		{Header: "Providers", RequiredCols: []string{"Name", "Version"}},
 		{Header: "Requirements", RequiredCols: []string{"Name", "Version"}},
@@ -103,6 +104,9 @@ func NewSectionValidator(data string) *SectionValidator {
 		{Header: "Testing"},
 		{Header: "Authors"},
 		{Header: "License"},
+		{Header: "Notes"},
+		{Header: "Contributing"},
+		{Header: "References"},
 	}
 
 	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
@@ -267,6 +271,7 @@ func NewFileValidator(readmePath string) *FileValidator {
 		filepath.Join(rootDir, "variables.tf"),
 		filepath.Join(rootDir, "terraform.tf"),
 		filepath.Join(rootDir, "Makefile"),
+		filepath.Join(rootDir, "TESTING.md"),
 	}
 	return &FileValidator{
 		files: files,
