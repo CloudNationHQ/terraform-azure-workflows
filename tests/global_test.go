@@ -106,7 +106,7 @@ func NewSectionValidator(data string) *SectionValidator {
 		{Header: "License"},
 		{Header: "Notes"},
 		{Header: "Contributing"},
-		{Header: "References"},
+		{Header: "Reference"},
 	}
 
 	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
