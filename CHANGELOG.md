@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.2.0...v1.2.1) (2024-12-02)
+
+
+### Bug Fixes
+
+* add switch statement and fix literal access to remove linting warnings ([#35](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/35)) ([0ed8c0f](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/0ed8c0fa0e26d0eacec5838d371190dbeaadbb53))
+
 ## [1.2.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.1.1...v1.2.0) (2024-11-26)
 
 
