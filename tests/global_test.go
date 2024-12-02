@@ -704,7 +704,7 @@ func extractText(node ast.Node) string {
 			case *ast.Text:
 				sb.Write(tn.Literal)
 			case *ast.Code:
-				sb.Write(tn.Leaf.Literal)
+				sb.Write(tn.Literal)
 			}
 		}
 		return ast.GoToNext
@@ -838,9 +838,11 @@ func extractFromFilePath(filePath string) ([]string, []string, error) {
 			resourceType := strings.TrimSpace(block.Labels[0])
 			resourceName := strings.TrimSpace(block.Labels[1])
 			fullResourceName := resourceType + "." + resourceName
-			if block.Type == "resource" {
+
+			switch block.Type {
+			case "resource":
 				resources = append(resources, fullResourceName)
-			} else if block.Type == "data" {
+			case "data":
 				dataSources = append(dataSources, fullResourceName)
 			}
 		}
