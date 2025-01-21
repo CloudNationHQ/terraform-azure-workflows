@@ -106,7 +106,7 @@ func NewSectionValidator(data string) *SectionValidator {
 		{Header: "License"},
 		{Header: "Notes"},
 		{Header: "Contributing"},
-		{Header: "Reference"},
+		{Header: "References"},
 	}
 
 	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
@@ -137,8 +137,10 @@ func (s Section) validate(rootNode ast.Node) []error {
 	ast.WalkFunc(rootNode, func(node ast.Node, entering bool) ast.WalkStatus {
 		if heading, ok := node.(*ast.Heading); ok && entering && heading.Level == 2 {
 			text := strings.TrimSpace(extractText(heading))
-			if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
+			if text == s.Header {
 				found = true
+				// if strings.EqualFold(text, s.Header) || strings.EqualFold(text, s.Header+"s") {
+				// 	found = true
 
 				if len(s.RequiredCols) > 0 || len(s.OptionalCols) > 0 {
 					nextNode := getNextSibling(node)
