@@ -1,11 +1,8 @@
 name: schema
 on:
   workflow_call:
-    inputs:
-      target-repo:
-        description: 'Repository to validate'
-        required: true
-        type: string
+  schedule:
+    - cron: '0 0 * * 1'  # Weekly on Monday 00:00 UTC
 
 permissions:
   contents: read
@@ -15,10 +12,16 @@ jobs:
   schema-validation:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout workflow code
+        uses: actions/checkout@v4
+        with:
+          repository: cloudnationhq/terraform-azure-workflows
+          path: workflow-repo
+
       - name: Checkout target repo
         uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.target-repo }}
+          repository: ${{ github.event.repository.full_name }}
           path: target-repo
 
       - name: Setup Go
@@ -26,11 +29,11 @@ jobs:
         with:
           go-version: '1.21'
 
-      - name: Run Schema Tests
-        working-directory: target-repo/tests/schema
+      - name: Run schema tests
+        working-directory: workflow-repo/tests/schema
         run: |
           go mod tidy
           go test -v .
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TERRAFORM_ROOT: ../..
+          TERRAFORM_ROOT: ${{ github.workspace }}/target-repo
