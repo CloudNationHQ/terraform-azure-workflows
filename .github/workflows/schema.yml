@@ -1,0 +1,41 @@
+name: schema
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  schema-validation:
+    name: Validate Terraform Schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout caller code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.client_payload.repository }}
+          path: caller
+
+      - name: setup go
+        uses: actions/setup-go@v5
+        with:
+          check-latest: true
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: caller
+        run: terraform init
+
+      - name: Run Validation Tests
+        working-directory: caller/tests
+        run: go test -v schema_test.go
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TERRAFORM_ROOT: ../
