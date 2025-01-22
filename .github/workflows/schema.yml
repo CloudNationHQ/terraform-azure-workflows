@@ -1,7 +1,11 @@
 name: schema
-
 on:
   workflow_call:
+    inputs:
+      target-repo:
+        description: 'Repository to validate'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -13,16 +17,17 @@ jobs:
     name: Validate Terraform Schema
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout caller code
+      - name: Checkout target repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.client_payload.repository }}
+          repository: ${{ inputs.target-repo }}
           path: caller
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: setup go
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          check-latest: true
+          go-version: '1.21'
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
