@@ -290,8 +290,10 @@ func (g *GitHubIssueService) CreateOrUpdateIssue(findings []ValidationFinding) e
 		return nil
 	}
 
-	const header = "## Missing Required Configuration\n\n"
+	const header = "### \n\n"
 	uniqueFindings := make(map[string]ValidationFinding)
+
+	// Deduplicate findings
 	for _, f := range findings {
 		key := fmt.Sprintf("%s|%s|%s|%v",
 			f.ResourceType,
@@ -304,6 +306,8 @@ func (g *GitHubIssueService) CreateOrUpdateIssue(findings []ValidationFinding) e
 
 	var newBody bytes.Buffer
 	fmt.Fprint(&newBody, header)
+
+	// Format findings with line breaks
 	for _, f := range uniqueFindings {
 		cleanPath := strings.ReplaceAll(f.Path, "root.", "")
 		status := "optional"
@@ -315,7 +319,7 @@ func (g *GitHubIssueService) CreateOrUpdateIssue(findings []ValidationFinding) e
 			itemType = "property"
 		}
 
-		fmt.Fprintf(&newBody, "- [ ] `%s` missing %s %s %s in %s\n",
+		fmt.Fprintf(&newBody, "`%s`: Missing %s %s `%s` in %s\n\n", // Note double newline
 			f.ResourceType,
 			status,
 			itemType,
@@ -324,7 +328,7 @@ func (g *GitHubIssueService) CreateOrUpdateIssue(findings []ValidationFinding) e
 		)
 	}
 
-	title := "Schema validation findings"
+	title := "Generated schema validation"
 	issueNumber, existingBody, err := g.findExistingIssue(title)
 	if err != nil {
 		return err
@@ -343,6 +347,65 @@ func (g *GitHubIssueService) CreateOrUpdateIssue(findings []ValidationFinding) e
 	}
 	return g.createIssue(title, finalBody)
 }
+
+// func (g *GitHubIssueService) CreateOrUpdateIssue(findings []ValidationFinding) error {
+// 	if len(findings) == 0 {
+// 		return nil
+// 	}
+//
+// 	const header = "## Missing Required Configuration\n\n"
+// 	uniqueFindings := make(map[string]ValidationFinding)
+// 	for _, f := range findings {
+// 		key := fmt.Sprintf("%s|%s|%s|%v",
+// 			f.ResourceType,
+// 			strings.ReplaceAll(f.Path, "root.", ""),
+// 			f.Name,
+// 			f.IsBlock,
+// 		)
+// 		uniqueFindings[key] = f
+// 	}
+//
+// 	var newBody bytes.Buffer
+// 	fmt.Fprint(&newBody, header)
+// 	for _, f := range uniqueFindings {
+// 		cleanPath := strings.ReplaceAll(f.Path, "root.", "")
+// 		status := "optional"
+// 		if f.Required {
+// 			status = "required"
+// 		}
+// 		itemType := "block"
+// 		if !f.IsBlock {
+// 			itemType = "property"
+// 		}
+//
+// 		fmt.Fprintf(&newBody, "- [ ] `%s` missing %s %s %s in %s\n",
+// 			f.ResourceType,
+// 			status,
+// 			itemType,
+// 			f.Name,
+// 			cleanPath,
+// 		)
+// 	}
+//
+// 	title := "Schema validation findings"
+// 	issueNumber, existingBody, err := g.findExistingIssue(title)
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	finalBody := newBody.String()
+// 	if issueNumber > 0 {
+// 		existingParts := strings.SplitN(existingBody, header, 2)
+// 		if len(existingParts) > 0 {
+// 			finalBody = strings.TrimSpace(existingParts[0]) + "\n\n" + newBody.String()
+// 		}
+// 	}
+//
+// 	if issueNumber > 0 {
+// 		return g.updateIssue(issueNumber, finalBody)
+// 	}
+// 	return g.createIssue(title, finalBody)
+// }
 
 func (g *GitHubIssueService) findExistingIssue(title string) (int, string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues?state=open", g.RepoOwner, g.RepoName)
