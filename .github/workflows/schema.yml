@@ -10,39 +10,25 @@ on:
 permissions:
   contents: read
   issues: write
-  pull-requests: read
 
 jobs:
   schema-validation:
-    name: Validate Terraform Schema
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout target repository
+      - name: Checkout target repo
         uses: actions/checkout@v4
         with:
           repository: ${{ inputs.target-repo }}
-          path: caller
-          token: ${{ secrets.GITHUB_TOKEN }}
+          path: target-repo
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false
-
-      - name: Terraform Init
-        working-directory: caller
-        run: terraform init
-
       - name: Run Schema Tests
-        working-directory: caller/tests/schema
+        working-directory: target-repo/tests/schema
         run: |
-          # Use absolute module path
-          go mod edit -module github.com/cloudnationhq/terraform-azure-workflows/schema
           go mod tidy
           go test -v .
         env:
