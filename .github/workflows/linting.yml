@@ -97,8 +97,6 @@ jobs:
 
       - name: run markdown tests
         working-directory: called/tests
-        # run: go test -v ./...
         run: go test -v -run TestMarkdown markdown_test.go
         env:
           README_PATH: "${{ github.workspace }}/caller/README.md"
-
