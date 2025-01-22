@@ -663,4 +663,3 @@ func TestValidateTerraformSchema(t *testing.T) {
 		}
 	}
 }
-
