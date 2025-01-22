@@ -38,11 +38,13 @@ jobs:
         working-directory: caller
         run: terraform init
 
-      - name: Run Validation Tests
-        working-directory: caller/tests
+      - name: Run Schema Tests
+        working-directory: caller/tests/schema
         run: |
+          # Use absolute module path
+          go mod edit -module github.com/cloudnationhq/terraform-azure-workflows/schema
           go mod tidy
-          go test -v -timeout 30m ./...
+          go test -v .
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TERRAFORM_ROOT: ../
+          TERRAFORM_ROOT: ../..
