@@ -1,4 +1,4 @@
-module github.com/cloudnationhq/terraform-azure-workflows
+module github.com/cloudnationhq/terraform-azure-workflows/tests
 
 go 1.23.1
 
