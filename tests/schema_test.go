@@ -432,10 +432,21 @@ type GitRepoInfo struct {
 	terraformRoot string
 }
 
-func (g *GitRepoInfo) GetRepoInfo() (owner, name string) {
+func (g *GitRepoInfo) GetRepoInfo() (owner, repo string) {
 	owner = os.Getenv("GITHUB_REPOSITORY_OWNER")
-	name = os.Getenv("GITHUB_REPOSITORY_NAME")
-	return owner, name
+	repo = os.Getenv("GITHUB_REPOSITORY_NAME")
+	if owner != "" && repo != "" {
+		return owner, repo
+	}
+
+	if ghRepo := os.Getenv("GITHUB_REPOSITORY"); ghRepo != "" {
+		parts := strings.SplitN(ghRepo, "/", 2)
+		if len(parts) == 2 {
+			owner, repo = parts[0], parts[1]
+			return owner, repo
+		}
+	}
+	return "", ""
 }
 
 func TestValidateTerraformSchema(t *testing.T) {
@@ -519,7 +530,7 @@ func validateTerraformSchemaInDir(t *testing.T, dir, submoduleName string) ([]Va
 		return nil, fmt.Errorf("failed to parse provider config in %s: %w", dir, err)
 	}
 
-  // cleanup
+	// cleanup
 	defer func() {
 		os.RemoveAll(filepath.Join(dir, ".terraform"))
 		os.Remove(filepath.Join(dir, "terraform.tfstate"))
