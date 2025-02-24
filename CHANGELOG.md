@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.2.1...v1.3.0) (2025-02-24)
+
+
+### Features
+
+* **deps:** bump mvdan.cc/xurls/v2 from 2.5.0 to 2.6.0 in /tests ([#37](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/37)) ([5ebe901](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/5ebe901507b4b147c2d577736a13ad24ba8ccb73))
+* validate schema for submodules separately and fail on any missing items ([#42](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/42)) ([246a168](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/246a16810e6c075503e475e3e32f0d6578e2f809))
+
 ## [1.2.1](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.2.0...v1.2.1) (2024-12-02)
 
 
