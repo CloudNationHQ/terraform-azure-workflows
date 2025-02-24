@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.2](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.3.1...v1.3.2) (2025-02-24)
+
+
+### Bug Fixes
+
+* enhance github issue output ([#45](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/45)) ([756dc3b](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/756dc3bd0b5bfdb656ae9350f36ab1aefe5df349))
+* replace interface with any in formatError function ([#47](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/47)) ([562e3b3](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/562e3b3f029ebd81a28976324fc8102d074b6c3f))
+
 ## [1.3.1](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.3.0...v1.3.1) (2025-02-24)
 
 
