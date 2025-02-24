@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.3.0...v1.3.1) (2025-02-24)
+
+
+### Bug Fixes
+
+* fix extracting repository info ([#43](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/43)) ([2cb5806](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/2cb5806542b39ff3d34ef57c1f202df4d919566b))
+
 ## [1.3.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.2.1...v1.3.0) (2025-02-24)
 
 
