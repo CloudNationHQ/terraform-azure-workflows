@@ -328,11 +328,11 @@ func (g *GitHubIssueService) CreateOrUpdateIssue(findings []ValidationFinding) e
 		status := boolToStr(f.Required, "required", "optional")
 		itemType := boolToStr(f.IsBlock, "block", "property")
 		if f.SubmoduleName == "" {
-			fmt.Fprintf(&newBody, "`%s`: Missing %s %s `%s` in %s\n\n",
+			fmt.Fprintf(&newBody, "`%s`: missing %s %s `%s` in `%s`\n\n",
 				f.ResourceType, status, itemType, f.Name, cleanPath,
 			)
 		} else {
-			fmt.Fprintf(&newBody, "`%s`: Missing %s %s `%s` in %s in submodule `%s`\n\n",
+			fmt.Fprintf(&newBody, "`%s`: missing %s %s `%s` in %s in submodule `%s`\n\n",
 				f.ResourceType, status, itemType, f.Name, cleanPath, f.SubmoduleName,
 			)
 		}
