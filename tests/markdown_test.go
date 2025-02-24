@@ -456,25 +456,10 @@ func compareHeaders(expected, actual string) error {
 	return nil
 }
 
-// formatError formats an error message
-func formatError(format string, args ...interface{}) error {
+func formatError(format string, args ...any) error {
 	return fmt.Errorf(format, args...)
 }
 
-// equalSlices checks if two slices are equal
-func equalSlices(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
-// findMissingItems finds items in a that are not in b
 func findMissingItems(a, b []string) []string {
 	bSet := make(map[string]struct{}, len(b))
 	for _, x := range b {
