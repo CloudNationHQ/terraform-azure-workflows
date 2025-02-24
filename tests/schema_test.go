@@ -332,7 +332,7 @@ func (g *GitHubIssueService) CreateOrUpdateIssue(findings []ValidationFinding) e
 				f.ResourceType, status, itemType, f.Name, cleanPath,
 			)
 		} else {
-			fmt.Fprintf(&newBody, "`%s`: Missing %s %s `%s` in %s submodule: %s\n\n",
+			fmt.Fprintf(&newBody, "`%s`: Missing %s %s `%s` in %s in submodule `%s`\n\n",
 				f.ResourceType, status, itemType, f.Name, cleanPath, f.SubmoduleName,
 			)
 		}
