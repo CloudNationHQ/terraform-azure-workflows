@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.3.2...v1.4.0) (2025-02-27)
+
+
+### Features
+
+* filter id and purely computed attributes from validation ([#48](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/48)) ([8390e79](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/8390e79280c1fea15499a425f2744bc048a42a89))
+
 ## [1.3.2](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.3.1...v1.3.2) (2025-02-24)
 
 
