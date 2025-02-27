@@ -174,9 +174,22 @@ func (bd *BlockData) validateAttributes(
 	findings *[]ValidationFinding,
 ) {
 	for name, attr := range schema.Attributes {
-		if attr.Computed || slices.Contains(ignore, name) {
+		// Skip 'id' property as it's not useful to show
+		if name == "id" {
 			continue
 		}
+
+		// Skip purely computed attributes (those that are computed but not optional)
+		// These are always exported, never set by the user
+		if attr.Computed && !attr.Optional && !attr.Required {
+			continue
+		}
+
+		// Skip attributes in the ignore list
+		if slices.Contains(ignore, name) {
+			continue
+		}
+
 		if !bd.properties[name] {
 			*findings = append(*findings, ValidationFinding{
 				ResourceType: resType,
