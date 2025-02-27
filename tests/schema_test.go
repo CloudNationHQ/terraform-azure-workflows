@@ -203,30 +203,6 @@ func (bd *BlockData) validateAttributes(
 	}
 }
 
-// func (bd *BlockData) validateAttributes(
-// 	t *testing.T,
-// 	resType, path string,
-// 	schema *SchemaBlock,
-// 	ignore []string,
-// 	findings *[]ValidationFinding,
-// ) {
-// 	for name, attr := range schema.Attributes {
-// 		if attr.Computed || slices.Contains(ignore, name) {
-// 			continue
-// 		}
-// 		if !bd.properties[name] {
-// 			*findings = append(*findings, ValidationFinding{
-// 				ResourceType: resType,
-// 				Path:         path,
-// 				Name:         name,
-// 				Required:     attr.Required,
-// 				IsBlock:      false,
-// 			})
-// 			logMissingAttribute(t, resType, name, path, attr.Required)
-// 		}
-// 	}
-// }
-
 func (bd *BlockData) validateBlocks(
 	t *testing.T,
 	resType, path string,
