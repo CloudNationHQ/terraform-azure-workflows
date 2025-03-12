@@ -574,6 +574,78 @@ func (g *GitRepoInfo) GetRepoInfo() (owner, repo string) {
 	return "", ""
 }
 
+// func TestValidateTerraformSchema(t *testing.T) {
+// 	// root directory from env or "."
+// 	terraformRoot := os.Getenv("TERRAFORM_ROOT")
+// 	if terraformRoot == "" {
+// 		terraformRoot = "."
+// 	}
+//
+// 	// Validate root
+// 	rootFindings, err := validateTerraformSchemaInDir(t, terraformRoot, "")
+// 	if err != nil {
+// 		t.Fatalf("Failed to validate root at %s: %v", terraformRoot, err)
+// 	}
+// 	var allFindings []ValidationFinding
+// 	allFindings = append(allFindings, rootFindings...)
+//
+// 	// Validate submodules in modules/<n>/ (one level)
+// 	modulesDir := filepath.Join(terraformRoot, "modules")
+// 	subs, err := findSubmodules(modulesDir)
+// 	if err != nil {
+// 		t.Fatalf("Failed to find submodules in %s: %v", modulesDir, err)
+// 	}
+// 	for _, sm := range subs {
+// 		f, sErr := validateTerraformSchemaInDir(t, sm.path, sm.name)
+// 		if sErr != nil {
+// 			t.Errorf("Failed to validate submodule %s: %v", sm.name, sErr)
+// 			continue
+// 		}
+// 		allFindings = append(allFindings, f...)
+// 	}
+//
+// 	// Log all missing
+// 	for _, f := range allFindings {
+// 		place := "root"
+// 		if f.SubmoduleName != "" {
+// 			place = "root in submodule " + f.SubmoduleName
+// 		}
+// 		requiredOptional := boolToStr(f.Required, "required", "optional")
+// 		blockOrProp := boolToStr(f.IsBlock, "block", "property")
+// 		entityType := "resource"
+// 		if f.IsDataSource {
+// 			entityType = "data source"
+// 		}
+// 		t.Logf("%s missing %s %s %q in %s (%s)", f.ResourceType, requiredOptional, blockOrProp, f.Name, place, entityType)
+// 	}
+//
+// 	// If GITHUB_TOKEN is set, create/update single GH issue
+// 	if ghToken := os.Getenv("GITHUB_TOKEN"); ghToken != "" {
+// 		if len(allFindings) > 0 {
+// 			gi := &GitRepoInfo{terraformRoot: terraformRoot}
+// 			owner, repoName := gi.GetRepoInfo()
+// 			if owner != "" && repoName != "" {
+// 				gh := &GitHubIssueService{
+// 					RepoOwner: owner,
+// 					RepoName:  repoName,
+// 					token:     ghToken,
+// 					Client:    &http.Client{Timeout: 10 * time.Second},
+// 				}
+// 				if err := gh.CreateOrUpdateIssue(allFindings); err != nil {
+// 					t.Errorf("Failed to create/update GitHub issue: %v", err)
+// 				}
+// 			} else {
+// 				t.Log("Could not determine repository info for GitHub issue creation.")
+// 			}
+// 		}
+// 	}
+//
+// 	// FAIL if ANY missing items (required or optional) exist:
+// 	if len(allFindings) > 0 {
+// 		t.Fatalf("Found %d missing properties/blocks in root or submodules. See logs above.", len(allFindings))
+// 	}
+// }
+
 func TestValidateTerraformSchema(t *testing.T) {
 	// root directory from env or "."
 	terraformRoot := os.Getenv("TERRAFORM_ROOT")
@@ -604,8 +676,11 @@ func TestValidateTerraformSchema(t *testing.T) {
 		allFindings = append(allFindings, f...)
 	}
 
+	// Deduplicate findings before logging
+	deduplicatedFindings := deduplicateFindings(allFindings)
+
 	// Log all missing
-	for _, f := range allFindings {
+	for _, f := range deduplicatedFindings {
 		place := "root"
 		if f.SubmoduleName != "" {
 			place = "root in submodule " + f.SubmoduleName
@@ -621,7 +696,7 @@ func TestValidateTerraformSchema(t *testing.T) {
 
 	// If GITHUB_TOKEN is set, create/update single GH issue
 	if ghToken := os.Getenv("GITHUB_TOKEN"); ghToken != "" {
-		if len(allFindings) > 0 {
+		if len(deduplicatedFindings) > 0 {
 			gi := &GitRepoInfo{terraformRoot: terraformRoot}
 			owner, repoName := gi.GetRepoInfo()
 			if owner != "" && repoName != "" {
@@ -631,7 +706,7 @@ func TestValidateTerraformSchema(t *testing.T) {
 					token:     ghToken,
 					Client:    &http.Client{Timeout: 10 * time.Second},
 				}
-				if err := gh.CreateOrUpdateIssue(allFindings); err != nil {
+				if err := gh.CreateOrUpdateIssue(deduplicatedFindings); err != nil {
 					t.Errorf("Failed to create/update GitHub issue: %v", err)
 				}
 			} else {
@@ -641,9 +716,35 @@ func TestValidateTerraformSchema(t *testing.T) {
 	}
 
 	// FAIL if ANY missing items (required or optional) exist:
-	if len(allFindings) > 0 {
-		t.Fatalf("Found %d missing properties/blocks in root or submodules. See logs above.", len(allFindings))
+	if len(deduplicatedFindings) > 0 {
+		t.Fatalf("Found %d missing properties/blocks in root or submodules. See logs above.", len(deduplicatedFindings))
 	}
+}
+
+func deduplicateFindings(findings []ValidationFinding) []ValidationFinding {
+	// Create a map to detect duplicates
+	seen := make(map[string]bool)
+	var result []ValidationFinding
+
+	for _, f := range findings {
+		// Create a unique key for each finding
+		key := fmt.Sprintf("%s|%s|%s|%v|%v|%s",
+			f.ResourceType,
+			f.Path,
+			f.Name,
+			f.IsBlock,
+			f.IsDataSource,
+			f.SubmoduleName,
+		)
+
+		// Only add to the result if we haven't seen this exact finding before
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, f)
+		}
+	}
+
+	return result
 }
 
 func validateTerraformSchemaInDir(t *testing.T, dir, submoduleName string) ([]ValidationFinding, error) {
