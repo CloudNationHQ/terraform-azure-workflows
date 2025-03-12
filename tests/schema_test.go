@@ -117,6 +117,47 @@ func NewBlockData() BlockData {
 	}
 }
 
+// NEW FUNCTION: Extract ignore_changes directly from AST
+func extractLifecycleIgnoreChangesFromAST(body *hclsyntax.Body) []string {
+	var ignoreChanges []string
+
+	for _, block := range body.Blocks {
+		if block.Type == "lifecycle" {
+			for name, attr := range block.Body.Attributes {
+				if name == "ignore_changes" {
+					// For HCL lists like [subnet, dns_servers]
+					if listExpr, ok := attr.Expr.(*hclsyntax.TupleConsExpr); ok {
+						for _, expr := range listExpr.Exprs {
+							if traversalExpr, ok := expr.(*hclsyntax.ScopeTraversalExpr); ok {
+								// This is for bare identifiers like: ignore_changes = [subnet, dns_servers]
+								if len(traversalExpr.Traversal) > 0 {
+									ignoreChanges = append(ignoreChanges, traversalExpr.Traversal.RootName())
+								}
+							} else if templateExpr, ok := expr.(*hclsyntax.TemplateExpr); ok {
+								// This handles string literals like: ignore_changes = ["subnet", "dns_servers"]
+								if len(templateExpr.Parts) == 1 {
+									if literalPart, ok := templateExpr.Parts[0].(*hclsyntax.LiteralValueExpr); ok {
+										if literalPart.Val.Type() == cty.String {
+											ignoreChanges = append(ignoreChanges, literalPart.Val.AsString())
+										}
+									}
+								}
+							} else if literalExpr, ok := expr.(*hclsyntax.LiteralValueExpr); ok {
+								// This handles a literal value like: ignore_changes = ["subnet"]
+								if literalExpr.Val.Type() == cty.String {
+									ignoreChanges = append(ignoreChanges, literalExpr.Val.AsString())
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return ignoreChanges
+}
+
 func (bd *BlockData) ParseAttributes(body *hclsyntax.Body) {
 	for name := range body.Attributes {
 		bd.properties[name] = true
@@ -124,6 +165,12 @@ func (bd *BlockData) ParseAttributes(body *hclsyntax.Body) {
 }
 
 func (bd *BlockData) ParseBlocks(body *hclsyntax.Body) {
+	// First, directly extract any lifecycle ignore_changes from AST
+	directIgnoreChanges := extractLifecycleIgnoreChangesFromAST(body)
+	if len(directIgnoreChanges) > 0 {
+		bd.ignoreChanges = append(bd.ignoreChanges, directIgnoreChanges...)
+	}
+
 	for _, block := range body.Blocks {
 		switch block.Type {
 		case "lifecycle":
@@ -149,7 +196,10 @@ func (bd *BlockData) Validate(
 	if schema == nil {
 		return
 	}
-	ignore := append(parentIgnore, bd.ignoreChanges...)
+	// Combine parent ignore changes with this block's ignore changes
+	ignore := append([]string{}, parentIgnore...)
+	ignore = append(ignore, bd.ignoreChanges...)
+
 	bd.validateAttributes(t, resourceType, path, schema, ignore, findings)
 	bd.validateBlocks(t, resourceType, path, schema, ignore, findings)
 }
@@ -161,7 +211,8 @@ func (bd *BlockData) parseLifecycle(body *hclsyntax.Body) {
 			val, diags := attr.Expr.Value(nil)
 			// Only process if we could get a value without errors
 			if diags == nil || !diags.HasErrors() {
-				bd.ignoreChanges = extractIgnoreChanges(val)
+				extracted := extractIgnoreChanges(val)
+				bd.ignoreChanges = append(bd.ignoreChanges, extracted...)
 			}
 		}
 	}
@@ -196,7 +247,7 @@ func (bd *BlockData) validateAttributes(
 			continue
 		}
 
-		// Skip attributes in the ignore list
+		// Skip attributes in the ignore list (case insensitive)
 		if isIgnored(ignore, name) {
 			continue
 		}
@@ -222,7 +273,7 @@ func (bd *BlockData) validateBlocks(
 	findings *[]ValidationFinding,
 ) {
 	for name, blockType := range schema.BlockTypes {
-		// skip timeouts or ignored blocks
+		// skip timeouts or ignored blocks (case insensitive)
 		if name == "timeouts" || isIgnored(ignore, name) {
 			continue
 		}
@@ -250,13 +301,20 @@ func (bd *BlockData) validateBlocks(
 	}
 }
 
-// Helper function to check if an item is ignored
+// Helper function to check if an item is ignored (case insensitive)
 func isIgnored(ignore []string, name string) bool {
 	// Check for the special "all" marker
 	if slices.Contains(ignore, "*all*") {
 		return true
 	}
-	return slices.Contains(ignore, name)
+
+	// Do a case-insensitive check
+	for _, item := range ignore {
+		if strings.EqualFold(item, name) {
+			return true
+		}
+	}
+	return false
 }
 
 // parser
@@ -318,6 +376,13 @@ func (p *DefaultHCLParser) ParseMainFile(filename string) ([]ParsedResource, []P
 		// Parse resources
 		if blk.Type == "resource" && len(blk.Labels) >= 2 {
 			parsed := ParseSyntaxBody(blk.Body)
+
+			// Direct AST extraction of ignore_changes as a backup
+			ignoreChanges := extractLifecycleIgnoreChangesFromAST(blk.Body)
+			if len(ignoreChanges) > 0 {
+				parsed.data.ignoreChanges = append(parsed.data.ignoreChanges, ignoreChanges...)
+			}
+
 			res := ParsedResource{
 				Type: blk.Labels[0],
 				Name: blk.Labels[1],
@@ -329,6 +394,13 @@ func (p *DefaultHCLParser) ParseMainFile(filename string) ([]ParsedResource, []P
 		// Parse data sources
 		if blk.Type == "data" && len(blk.Labels) >= 2 {
 			parsed := ParseSyntaxBody(blk.Body)
+
+			// Direct AST extraction for data sources too
+			ignoreChanges := extractLifecycleIgnoreChangesFromAST(blk.Body)
+			if len(ignoreChanges) > 0 {
+				parsed.data.ignoreChanges = append(parsed.data.ignoreChanges, ignoreChanges...)
+			}
+
 			ds := ParsedDataSource{
 				Type: blk.Labels[0],
 				Name: blk.Labels[1],
@@ -517,7 +589,7 @@ func TestValidateTerraformSchema(t *testing.T) {
 	var allFindings []ValidationFinding
 	allFindings = append(allFindings, rootFindings...)
 
-	// Validate submodules in modules/<name>/ (one level)
+	// Validate submodules in modules/<n>/ (one level)
 	modulesDir := filepath.Join(terraformRoot, "modules")
 	subs, err := findSubmodules(modulesDir)
 	if err != nil {
@@ -643,10 +715,18 @@ func validateTerraformSchemaInDir(t *testing.T, dir, submoduleName string) ([]Va
 		// Pass resource-level ignoreChanges to initial validation
 		r.data.Validate(t, r.Type, "root", resSchema.Block, r.data.ignoreChanges, &local)
 
-		// Filter out any findings for attributes that are in ignore_changes
+		// Filter out any findings for attributes that are in ignore_changes (case-insensitively)
 		for i := range local {
-			// Skip findings that match items in ignoreChanges
-			if !slices.Contains(r.data.ignoreChanges, local[i].Name) {
+			// Check if the finding should be excluded due to ignore_changes
+			shouldExclude := false
+			for _, ignored := range r.data.ignoreChanges {
+				if strings.EqualFold(ignored, local[i].Name) {
+					shouldExclude = true
+					break
+				}
+			}
+
+			if !shouldExclude {
 				local[i].SubmoduleName = submoduleName
 				findings = append(findings, local[i])
 			}
@@ -676,10 +756,17 @@ func validateTerraformSchemaInDir(t *testing.T, dir, submoduleName string) ([]Va
 		// Pass data source-level ignoreChanges to initial validation
 		ds.data.Validate(t, ds.Type, "root", dsSchema.Block, ds.data.ignoreChanges, &local)
 
-		// Filter out any findings for attributes that are in ignore_changes
+		// Filter out any findings that should be excluded (case-insensitively)
 		for i := range local {
-			// Skip findings that match items in ignoreChanges
-			if !slices.Contains(ds.data.ignoreChanges, local[i].Name) {
+			shouldExclude := false
+			for _, ignored := range ds.data.ignoreChanges {
+				if strings.EqualFold(ignored, local[i].Name) {
+					shouldExclude = true
+					break
+				}
+			}
+
+			if !shouldExclude {
 				local[i].SubmoduleName = submoduleName
 				local[i].IsDataSource = true // Mark as data source
 				findings = append(findings, local[i])
