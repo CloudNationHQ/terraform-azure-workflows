@@ -272,7 +272,6 @@ func (bd *BlockData) ParseAttributes(body *hclsyntax.Body) {
 }
 
 func (bd *BlockData) ParseBlocks(body *hclsyntax.Body) {
-	// First, directly extract any lifecycle ignore_changes from AST
 	directIgnoreChanges := extractLifecycleIgnoreChangesFromAST(body)
 	if len(directIgnoreChanges) > 0 {
 		bd.IgnoreChanges = append(bd.IgnoreChanges, directIgnoreChanges...)
@@ -297,7 +296,6 @@ func (bd *BlockData) parseLifecycle(body *hclsyntax.Body) {
 	for name, attr := range body.Attributes {
 		if name == "ignore_changes" {
 			val, diags := attr.Expr.Value(nil)
-			// Only process if we could get a value without errors
 			if diags == nil || !diags.HasErrors() {
 				extracted := extractIgnoreChanges(val)
 				bd.IgnoreChanges = append(bd.IgnoreChanges, extracted...)
@@ -316,7 +314,6 @@ func (bd *BlockData) parseDynamicBlock(body *hclsyntax.Body, name string) {
 	}
 }
 
-// Validate validates a block against a schema
 func (bd *BlockData) Validate(
 	resourceType, path string,
 	schema *SchemaBlock,
@@ -327,7 +324,6 @@ func (bd *BlockData) Validate(
 		return
 	}
 
-	// Combine parent ignore changes with this block's ignore changes
 	ignore := slices.Clone(parentIgnore)
 	ignore = append(ignore, bd.IgnoreChanges...)
 
@@ -335,7 +331,6 @@ func (bd *BlockData) Validate(
 	bd.validateBlocks(resourceType, path, schema, ignore, findings)
 }
 
-// validateAttributes validates attributes against a schema
 func (bd *BlockData) validateAttributes(
 	resType, path string,
 	schema *SchemaBlock,
@@ -343,18 +338,14 @@ func (bd *BlockData) validateAttributes(
 	findings *[]ValidationFinding,
 ) {
 	for name, attr := range schema.Attributes {
-		// Skip 'id' property as it's not useful to show
 		if name == "id" {
 			continue
 		}
 
-		// Skip purely computed attributes (those that are computed but not optional)
-		// These are always exported, never set by the user
 		if attr.Computed && !attr.Optional && !attr.Required {
 			continue
 		}
 
-		// Skip attributes in the ignore list (case insensitive)
 		if isIgnored(ignore, name) {
 			continue
 		}
@@ -371,7 +362,6 @@ func (bd *BlockData) validateAttributes(
 	}
 }
 
-// validateBlocks validates blocks against a schema
 func (bd *BlockData) validateBlocks(
 	resType, path string,
 	schema *SchemaBlock,
@@ -379,7 +369,6 @@ func (bd *BlockData) validateBlocks(
 	findings *[]ValidationFinding,
 ) {
 	for name, blockType := range schema.BlockTypes {
-		// skip timeouts or ignored blocks (case insensitive)
 		if name == "timeouts" || isIgnored(ignore, name) {
 			continue
 		}
@@ -406,7 +395,6 @@ func (bd *BlockData) validateBlocks(
 	}
 }
 
-// ParseProviderRequirements parses provider requirements from a file
 func (p *DefaultHCLParser) ParseProviderRequirements(ctx context.Context, filename string) (map[string]ProviderConfig, error) {
 	parser := hclparse.NewParser()
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -446,7 +434,6 @@ func (p *DefaultHCLParser) ParseProviderRequirements(ctx context.Context, filena
 	return providers, nil
 }
 
-// ParseMainFile parses a main.tf file
 func (p *DefaultHCLParser) ParseMainFile(ctx context.Context, filename string) ([]ParsedResource, []ParsedDataSource, error) {
 	parser := hclparse.NewParser()
 	f, diags := parser.ParseHCLFile(filename)
@@ -461,11 +448,9 @@ func (p *DefaultHCLParser) ParseMainFile(ctx context.Context, filename string) (
 	var dataSources []ParsedDataSource
 
 	for _, blk := range body.Blocks {
-		// Parse resources
 		if blk.Type == "resource" && len(blk.Labels) >= 2 {
 			parsed := ParseSyntaxBody(blk.Body)
 
-			// Direct AST extraction of ignore_changes as a backup
 			ignoreChanges := extractLifecycleIgnoreChangesFromAST(blk.Body)
 			if len(ignoreChanges) > 0 {
 				parsed.Data.IgnoreChanges = append(parsed.Data.IgnoreChanges, ignoreChanges...)
@@ -479,11 +464,9 @@ func (p *DefaultHCLParser) ParseMainFile(ctx context.Context, filename string) (
 			resources = append(resources, res)
 		}
 
-		// Parse data sources
 		if blk.Type == "data" && len(blk.Labels) >= 2 {
 			parsed := ParseSyntaxBody(blk.Body)
 
-			// Direct AST extraction for data sources too
 			ignoreChanges := extractLifecycleIgnoreChangesFromAST(blk.Body)
 			if len(ignoreChanges) > 0 {
 				parsed.Data.IgnoreChanges = append(parsed.Data.IgnoreChanges, ignoreChanges...)
@@ -500,7 +483,6 @@ func (p *DefaultHCLParser) ParseMainFile(ctx context.Context, filename string) (
 	return resources, dataSources, nil
 }
 
-// Init initializes Terraform in a directory
 func (r *DefaultTerraformRunner) Init(ctx context.Context, dir string) error {
 	cmd := exec.CommandContext(ctx, "terraform", "init")
 	cmd.Dir = dir
@@ -511,7 +493,6 @@ func (r *DefaultTerraformRunner) Init(ctx context.Context, dir string) error {
 	return nil
 }
 
-// GetSchema gets the Terraform schema
 func (r *DefaultTerraformRunner) GetSchema(ctx context.Context, dir string) (*TerraformSchema, error) {
 	cmd := exec.CommandContext(ctx, "terraform", "providers", "schema", "-json")
 	cmd.Dir = dir
@@ -528,7 +509,6 @@ func (r *DefaultTerraformRunner) GetSchema(ctx context.Context, dir string) (*Te
 	return &tfSchema, nil
 }
 
-// CreateOrUpdateIssue creates or updates a GitHub issue
 func (g *GitHubIssueService) CreateOrUpdateIssue(ctx context.Context, findings []ValidationFinding) error {
 	if len(findings) == 0 {
 		return nil
@@ -537,7 +517,6 @@ func (g *GitHubIssueService) CreateOrUpdateIssue(ctx context.Context, findings [
 	const header = "### \n\n"
 	dedup := make(map[string]ValidationFinding)
 
-	// Deduplicate exact lines in the GitHub issue (just to avoid repeating the same line).
 	for _, f := range findings {
 		key := fmt.Sprintf("%s|%s|%s|%v|%v|%s",
 			f.ResourceType,
@@ -588,7 +567,6 @@ func (g *GitHubIssueService) CreateOrUpdateIssue(ctx context.Context, findings [
 	return g.createIssue(ctx, title, finalBody)
 }
 
-// findExistingIssue finds an existing GitHub issue
 func (g *GitHubIssueService) findExistingIssue(ctx context.Context, title string) (int, string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues?state=open", g.RepoOwner, g.RepoName)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -626,7 +604,6 @@ func (g *GitHubIssueService) findExistingIssue(ctx context.Context, title string
 	return 0, "", nil
 }
 
-// updateIssue updates a GitHub issue
 func (g *GitHubIssueService) updateIssue(ctx context.Context, issueNumber int, body string) error {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues/%d", g.RepoOwner, g.RepoName, issueNumber)
 	payload := struct {
@@ -659,7 +636,6 @@ func (g *GitHubIssueService) updateIssue(ctx context.Context, issueNumber int, b
 	return nil
 }
 
-// createIssue creates a GitHub issue
 func (g *GitHubIssueService) createIssue(ctx context.Context, title, body string) error {
 	payload := struct {
 		Title string `json:"title"`
@@ -696,7 +672,6 @@ func (g *GitHubIssueService) createIssue(ctx context.Context, title, body string
 	return nil
 }
 
-// GetRepoInfo gets repository information
 func (g *GitRepoInfo) GetRepoInfo() (owner, repo string) {
 	owner = os.Getenv("GITHUB_REPOSITORY_OWNER")
 	repo = os.Getenv("GITHUB_REPOSITORY_NAME")
@@ -714,12 +689,11 @@ func (g *GitRepoInfo) GetRepoInfo() (owner, repo string) {
 	return "", ""
 }
 
-// findSubmodules finds subdirectories under modulesDir that contain main.tf
 func findSubmodules(modulesDir string) ([]SubModule, error) {
 	var result []SubModule
 	entries, err := os.ReadDir(modulesDir)
 	if err != nil {
-		return result, nil // Return empty slice instead of error if directory doesn't exist
+		return result, nil
 	}
 	for _, e := range entries {
 		if e.IsDir() {
@@ -734,12 +708,10 @@ func findSubmodules(modulesDir string) ([]SubModule, error) {
 	return result, nil
 }
 
-// validateResources validates Terraform resources
 func validateResources(logger Logger, resources []ParsedResource, tfSchema TerraformSchema, providers map[string]ProviderConfig, dir, submoduleName string) []ValidationFinding {
 	var findings []ValidationFinding
 
 	for _, r := range resources {
-		// e.g. "azurerm_virtual_hub_routing_intent" => provider name "azurerm"
 		provName := strings.SplitN(r.Type, "_", 2)[0]
 		cfg, ok := providers[provName]
 		if !ok {
@@ -758,12 +730,9 @@ func validateResources(logger Logger, resources []ParsedResource, tfSchema Terra
 		}
 
 		var local []ValidationFinding
-		// Pass resource-level ignoreChanges to initial validation
 		r.Data.Validate(r.Type, "root", resSchema.Block, r.Data.IgnoreChanges, &local)
 
-		// Filter out any findings for attributes that are in ignore_changes (case-insensitively)
 		for i := range local {
-			// Check if the finding should be excluded due to ignore_changes
 			shouldExclude := false
 			for _, ignored := range r.Data.IgnoreChanges {
 				if strings.EqualFold(ignored, local[i].Name) {
@@ -782,7 +751,6 @@ func validateResources(logger Logger, resources []ParsedResource, tfSchema Terra
 	return findings
 }
 
-// validateDataSources validates Terraform data sources
 func validateDataSources(logger Logger, dataSources []ParsedDataSource, tfSchema TerraformSchema, providers map[string]ProviderConfig, dir, submoduleName string) []ValidationFinding {
 	var findings []ValidationFinding
 
@@ -805,10 +773,8 @@ func validateDataSources(logger Logger, dataSources []ParsedDataSource, tfSchema
 		}
 
 		var local []ValidationFinding
-		// Pass data source-level ignoreChanges to initial validation
 		ds.Data.Validate(ds.Type, "root", dsSchema.Block, ds.Data.IgnoreChanges, &local)
 
-		// Filter out any findings that should be excluded (case-insensitively)
 		for i := range local {
 			shouldExclude := false
 			for _, ignored := range ds.Data.IgnoreChanges {
@@ -820,7 +786,7 @@ func validateDataSources(logger Logger, dataSources []ParsedDataSource, tfSchema
 
 			if !shouldExclude {
 				local[i].SubmoduleName = submoduleName
-				local[i].IsDataSource = true // Mark as data source
+				local[i].IsDataSource = true
 				findings = append(findings, local[i])
 			}
 		}
@@ -829,7 +795,6 @@ func validateDataSources(logger Logger, dataSources []ParsedDataSource, tfSchema
 	return findings
 }
 
-// validateTerraformSchemaInDir validates Terraform files in a directory
 func validateTerraformSchemaInDir(logger Logger, dir, submoduleName string) ([]ValidationFinding, error) {
 	ctx := context.Background()
 	mainTf := filepath.Join(dir, "main.tf")
@@ -840,38 +805,32 @@ func validateTerraformSchemaInDir(logger Logger, dir, submoduleName string) ([]V
 	parser := &DefaultHCLParser{}
 	tfRunner := &DefaultTerraformRunner{}
 
-	// Parse provider requirements
 	tfFile := filepath.Join(dir, "terraform.tf")
 	providers, err := parser.ParseProviderRequirements(ctx, tfFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse provider config in %s: %w", dir, err)
 	}
 
-	// Clean up resources after validation
 	defer func() {
 		os.RemoveAll(filepath.Join(dir, ".terraform"))
 		os.Remove(filepath.Join(dir, "terraform.tfstate"))
 		os.Remove(filepath.Join(dir, ".terraform.lock.hcl"))
 	}()
 
-	// Initialize terraform
 	if err := tfRunner.Init(ctx, dir); err != nil {
 		return nil, err
 	}
 
-	// Get provider schemas
 	tfSchema, err := tfRunner.GetSchema(ctx, dir)
 	if err != nil {
 		return nil, err
 	}
 
-	// Parse resources and data sources
 	resources, dataSources, err := parser.ParseMainFile(ctx, mainTf)
 	if err != nil {
 		return nil, fmt.Errorf("parseMainFile in %s: %w", dir, err)
 	}
 
-	// Validate resources and data sources
 	var findings []ValidationFinding
 	findings = append(findings, validateResources(logger, resources, *tfSchema, providers, dir, submoduleName)...)
 	findings = append(findings, validateDataSources(logger, dataSources, *tfSchema, providers, dir, submoduleName)...)
@@ -879,14 +838,11 @@ func validateTerraformSchemaInDir(logger Logger, dir, submoduleName string) ([]V
 	return findings, nil
 }
 
-// deduplicateFindings removes duplicate validation findings
 func deduplicateFindings(findings []ValidationFinding) []ValidationFinding {
-	// Create a map to detect duplicates
 	seen := make(map[string]bool)
 	var result []ValidationFinding
 
 	for _, f := range findings {
-		// Create a unique key for each finding
 		key := fmt.Sprintf("%s|%s|%s|%v|%v|%s",
 			f.ResourceType,
 			f.Path,
@@ -896,7 +852,6 @@ func deduplicateFindings(findings []ValidationFinding) []ValidationFinding {
 			f.SubmoduleName,
 		)
 
-		// Only add to the result if we haven't seen this exact finding before
 		if !seen[key] {
 			seen[key] = true
 			result = append(result, f)
@@ -906,16 +861,13 @@ func deduplicateFindings(findings []ValidationFinding) []ValidationFinding {
 	return result
 }
 
-// TestValidateTerraformSchema is the main test function
 func TestValidateTerraformSchema(t *testing.T) {
 	ctx := context.Background()
-	// root directory from env or "."
 	terraformRoot := os.Getenv("TERRAFORM_ROOT")
 	if terraformRoot == "" {
 		terraformRoot = "."
 	}
 
-	// Validate root
 	rootFindings, err := validateTerraformSchemaInDir(t, terraformRoot, "")
 	if err != nil {
 		t.Fatalf("Failed to validate root at %s: %v", terraformRoot, err)
@@ -923,7 +875,6 @@ func TestValidateTerraformSchema(t *testing.T) {
 	var allFindings []ValidationFinding
 	allFindings = append(allFindings, rootFindings...)
 
-	// Validate submodules in modules/<n>/ (one level)
 	modulesDir := filepath.Join(terraformRoot, "modules")
 	subs, err := findSubmodules(modulesDir)
 	if err != nil {
