@@ -150,11 +150,23 @@ func (bd *BlockData) Validate(
 func (bd *BlockData) parseLifecycle(body *hclsyntax.Body) {
 	for name, attr := range body.Attributes {
 		if name == "ignore_changes" {
-			val, _ := attr.Expr.Value(nil)
-			bd.ignoreChanges = extractIgnoreChanges(val)
+			val, diags := attr.Expr.Value(nil)
+			// Make sure we check for evaluation errors
+			if diags == nil || !diags.HasErrors() {
+				bd.ignoreChanges = extractIgnoreChanges(val)
+			}
 		}
 	}
 }
+
+// func (bd *BlockData) parseLifecycle(body *hclsyntax.Body) {
+// 	for name, attr := range body.Attributes {
+// 		if name == "ignore_changes" {
+// 			val, _ := attr.Expr.Value(nil)
+// 			bd.ignoreChanges = extractIgnoreChanges(val)
+// 		}
+// 	}
+// }
 
 func (bd *BlockData) parseDynamicBlock(body *hclsyntax.Body, name string) {
 	contentBlock := findContentBlock(body)
@@ -186,7 +198,7 @@ func (bd *BlockData) validateAttributes(
 		}
 
 		// Skip attributes in the ignore list
-		if slices.Contains(ignore, name) {
+		if isIgnored(ignore, name) {
 			continue
 		}
 
@@ -203,6 +215,116 @@ func (bd *BlockData) validateAttributes(
 	}
 }
 
+// func (bd *BlockData) validateAttributes(
+// 	t *testing.T,
+// 	resType, path string,
+// 	schema *SchemaBlock,
+// 	ignore []string,
+// 	findings *[]ValidationFinding,
+// ) {
+// 	for name, attr := range schema.Attributes {
+// 		// Skip 'id' property as it's not useful to show
+// 		if name == "id" {
+// 			continue
+// 		}
+//
+// 		// Skip purely computed attributes (those that are computed but not optional)
+// 		// These are always exported, never set by the user
+// 		if attr.Computed && !attr.Optional && !attr.Required {
+// 			continue
+// 		}
+//
+// 		// Skip attributes in the ignore list
+// 		if slices.Contains(ignore, name) {
+// 			continue
+// 		}
+//
+// 		if !bd.properties[name] {
+// 			*findings = append(*findings, ValidationFinding{
+// 				ResourceType: resType,
+// 				Path:         path,
+// 				Name:         name,
+// 				Required:     attr.Required,
+// 				IsBlock:      false,
+// 			})
+// 			logMissingAttribute(t, resType, name, path, attr.Required)
+// 		}
+// 	}
+// }
+
+// func (bd *BlockData) validateAttributes(
+// 	t *testing.T,
+// 	resType, path string,
+// 	schema *SchemaBlock,
+// 	ignore []string,
+// 	findings *[]ValidationFinding,
+// ) {
+// 	for name, attr := range schema.Attributes {
+// 		// Skip 'id' property as it's not useful to show
+// 		if name == "id" {
+// 			continue
+// 		}
+//
+// 		// Skip purely computed attributes (those that are computed but not optional)
+// 		// These are always exported, never set by the user
+// 		if attr.Computed && !attr.Optional && !attr.Required {
+// 			continue
+// 		}
+//
+// 		// Skip attributes in the ignore list
+// 		if slices.Contains(ignore, name) {
+// 			continue
+// 		}
+//
+// 		if !bd.properties[name] {
+// 			*findings = append(*findings, ValidationFinding{
+// 				ResourceType: resType,
+// 				Path:         path,
+// 				Name:         name,
+// 				Required:     attr.Required,
+// 				IsBlock:      false,
+// 			})
+// 			logMissingAttribute(t, resType, name, path, attr.Required)
+// 		}
+// 	}
+// }
+
+// func (bd *BlockData) validateBlocks(
+// 	t *testing.T,
+// 	resType, path string,
+// 	schema *SchemaBlock,
+// 	ignore []string,
+// 	findings *[]ValidationFinding,
+// ) {
+// 	for name, blockType := range schema.BlockTypes {
+// 		// skip timeouts or ignored
+// 		if name == "timeouts" || slices.Contains(ignore, name) {
+// 			continue
+// 		}
+// 		static := bd.staticBlocks[name]
+// 		dynamic := bd.dynamicBlocks[name]
+// 		if static == nil && dynamic == nil {
+// 			*findings = append(*findings, ValidationFinding{
+// 				ResourceType: resType,
+// 				Path:         path,
+// 				Name:         name,
+// 				Required:     blockType.MinItems > 0,
+// 				IsBlock:      true,
+// 			})
+// 			logMissingBlock(t, resType, name, path, blockType.MinItems > 0)
+// 			continue
+// 		}
+// 		var target *ParsedBlock
+// 		if static != nil {
+// 			target = static
+// 		} else {
+// 			target = dynamic
+// 		}
+// 		newPath := fmt.Sprintf("%s.%s", path, name)
+// 		target.data.Validate(t, resType, newPath, blockType.Block, ignore, findings)
+// 	}
+// }
+
 func (bd *BlockData) validateBlocks(
 	t *testing.T,
 	resType, path string,
@@ -211,8 +333,8 @@ func (bd *BlockData) validateBlocks(
 	findings *[]ValidationFinding,
 ) {
 	for name, blockType := range schema.BlockTypes {
-		// skip timeouts or ignored
-		if name == "timeouts" || slices.Contains(ignore, name) {
+		// skip timeouts or ignored blocks
+		if name == "timeouts" || isIgnored(ignore, name) {
 			continue
 		}
 		static := bd.staticBlocks[name]
@@ -238,6 +360,42 @@ func (bd *BlockData) validateBlocks(
 		target.data.Validate(t, resType, newPath, blockType.Block, ignore, findings)
 	}
 }
+
+// func (bd *BlockData) validateBlocks(
+// 	t *testing.T,
+// 	resType, path string,
+// 	schema *SchemaBlock,
+// 	ignore []string,
+// 	findings *[]ValidationFinding,
+// ) {
+// 	for name, blockType := range schema.BlockTypes {
+// 		// skip timeouts or ignored blocks
+// 		if name == "timeouts" || slices.Contains(ignore, name) {
+// 			continue
+// 		}
+// 		static := bd.staticBlocks[name]
+// 		dynamic := bd.dynamicBlocks[name]
+// 		if static == nil && dynamic == nil {
+// 			*findings = append(*findings, ValidationFinding{
+// 				ResourceType: resType,
+// 				Path:         path,
+// 				Name:         name,
+// 				Required:     blockType.MinItems > 0,
+// 				IsBlock:      true,
+// 			})
+// 			logMissingBlock(t, resType, name, path, blockType.MinItems > 0)
+// 			continue
+// 		}
+// 		var target *ParsedBlock
+// 		if static != nil {
+// 			target = static
+// 		} else {
+// 			target = dynamic
+// 		}
+// 		newPath := fmt.Sprintf("%s.%s", path, name)
+// 		target.data.Validate(t, resType, newPath, blockType.Block, ignore, findings)
+// 	}
+// }
 
 // parser
 type DefaultHCLParser struct{}
@@ -366,6 +524,59 @@ func (g *GitHubIssueService) CreateOrUpdateIssue(findings []ValidationFinding) e
 	}
 	return g.createIssue(title, finalBody)
 }
+
+// func (g *GitHubIssueService) CreateOrUpdateIssue(findings []ValidationFinding) error {
+// 	if len(findings) == 0 {
+// 		return nil
+// 	}
+//
+// 	const header = "### \n\n"
+// 	dedup := make(map[string]ValidationFinding)
+//
+// 	// Deduplicate exact lines in the GitHub issue (just to avoid repeating the same line).
+// 	for _, f := range findings {
+// 		key := fmt.Sprintf("%s|%s|%s|%v|%s",
+// 			f.ResourceType,
+// 			strings.ReplaceAll(f.Path, "root.", ""),
+// 			f.Name,
+// 			f.IsBlock,
+// 			f.SubmoduleName,
+// 		)
+// 		dedup[key] = f
+// 	}
+//
+// 	var newBody bytes.Buffer
+// 	fmt.Fprint(&newBody, header)
+// 	for _, f := range dedup {
+// 		cleanPath := strings.ReplaceAll(f.Path, "root.", "")
+// 		status := boolToStr(f.Required, "required", "optional")
+// 		itemType := boolToStr(f.IsBlock, "block", "property")
+// 		if f.SubmoduleName == "" {
+// 			fmt.Fprintf(&newBody, "`%s`: missing %s %s `%s` in `%s`\n\n",
+// 				f.ResourceType, status, itemType, f.Name, cleanPath,
+// 			)
+// 		} else {
+// 			fmt.Fprintf(&newBody, "`%s`: missing %s %s `%s` in `%s` in submodule `%s`\n\n",
+// 				f.ResourceType, status, itemType, f.Name, cleanPath, f.SubmoduleName,
+// 			)
+// 		}
+// 	}
+//
+// 	title := "Generated schema validation"
+// 	issueNum, existingBody, err := g.findExistingIssue(title)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	finalBody := newBody.String()
+// 	if issueNum > 0 {
+// 		parts := strings.SplitN(existingBody, header, 2)
+// 		if len(parts) > 0 {
+// 			finalBody = strings.TrimSpace(parts[0]) + "\n\n" + newBody.String()
+// 		}
+// 		return g.updateIssue(issueNum, finalBody)
+// 	}
+// 	return g.createIssue(title, finalBody)
+// }
 
 func (g *GitHubIssueService) findExistingIssue(title string) (int, string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues?state=open", g.RepoOwner, g.RepoName)
@@ -687,12 +898,35 @@ func extractIgnoreChanges(val cty.Value) []string {
 		for it := val.ElementIterator(); it.Next(); {
 			_, v := it.Element()
 			if v.Type() == cty.String {
-				changes = append(changes, v.AsString())
+				str := v.AsString()
+				// If "all" is specified, return a special marker
+				if str == "all" {
+					return []string{"*all*"}
+				}
+				changes = append(changes, str)
 			}
 		}
 	}
 	return changes
 }
+
+func isIgnored(ignore []string, name string) bool {
+	// If "*all*" is in the ignore list, everything is ignored
+	return slices.Contains(ignore, "*all*") || slices.Contains(ignore, name)
+}
+
+// func extractIgnoreChanges(val cty.Value) []string {
+// 	var changes []string
+// 	if val.Type().IsCollectionType() {
+// 		for it := val.ElementIterator(); it.Next(); {
+// 			_, v := it.Element()
+// 			if v.Type() == cty.String {
+// 				changes = append(changes, v.AsString())
+// 			}
+// 		}
+// 	}
+// 	return changes
+// }
 
 func findContentBlock(body *hclsyntax.Body) *hclsyntax.Body {
 	for _, b := range body.Blocks {
