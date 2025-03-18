@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.4.0...v1.5.0) (2025-03-18)
+
+
+### Features
+
+* consuming markparsr package ([#50](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/50)) ([c4f69d2](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/c4f69d296b2cc92ccfa07674a374e1528f655d32))
+
 ## [1.4.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.3.2...v1.4.0) (2025-02-27)
 
 
