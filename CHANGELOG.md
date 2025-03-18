@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.5.0...v1.6.0) (2025-03-18)
+
+
+### Features
+
+* change additional optional sections and files ([#52](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/52)) ([b956ad5](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/b956ad51e5f19614dc7e6df44544e9e24558364c))
+
 ## [1.5.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.4.0...v1.5.0) (2025-03-18)
 
 
