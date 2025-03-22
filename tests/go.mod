@@ -3,7 +3,7 @@ module github.com/cloudnationhq/terraform-azure-workflows
 go 1.24.1
 
 require (
-	github.com/cloudnationhq/az-cn-go-markparsr v1.0.0
+	github.com/cloudnationhq/az-cn-go-markparsr v1.1.0
 	github.com/hashicorp/hcl/v2 v2.23.0
 	github.com/zclconf/go-cty v1.16.2
 	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa
