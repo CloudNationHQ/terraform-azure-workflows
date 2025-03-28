@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.6.0...v1.7.0) (2025-03-28)
+
+
+### Features
+
+* change addition section validation abit ([#54](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/54)) ([521c9b0](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/521c9b02f3c4a61053921e46541bcdb6b670acb8))
+
 ## [1.6.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.5.0...v1.6.0) (2025-03-18)
 
 
