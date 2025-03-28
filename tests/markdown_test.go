@@ -10,7 +10,7 @@ func TestReadmeValidation(t *testing.T) {
 	// Use functional options pattern
 	validator, err := markparsr.NewReadmeValidator(
 		markparsr.WithAdditionalSections("Goals",
-			"Features", "Authors", "Contributing", "Testing", "Notes", "References"),
+			"Features", "Contributors", "Testing", "Notes", "References"),
 		markparsr.WithAdditionalFiles("CONTRIBUTING.md", "TESTING.md",
 			"CODE_OF_CONDUCT.md", "SECURITY.md", "GOALS.md"),
 	)
