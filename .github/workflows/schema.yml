@@ -25,7 +25,7 @@ jobs:
           check-latest: true
 
       - name: fetch go modules
-        working-directory: called
+        working-directory: called/tests
         run: go mod download
 
       - name: setup terraform
