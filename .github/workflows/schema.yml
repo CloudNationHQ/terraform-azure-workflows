@@ -42,8 +42,7 @@ jobs:
 
       - name: Run schema tests
         working-directory: called/tests
-        run: |
-          go test -v -run TestTerraformSchemaValidation -count=1 schema_test.go
+        run: go test -v -run TestTerraformSchemaValidation -count=1 schema_test.go
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TERRAFORM_ROOT: "${{ github.workspace }}/caller"
+          TERRAFORM_ROOT: "${{ github.workspace }}/caller/"
