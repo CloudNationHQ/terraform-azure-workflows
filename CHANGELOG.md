@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.7.0...v1.8.0) (2025-04-01)
+
+
+### Features
+
+* consume schema validation package ([#56](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/56)) ([33563d2](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/33563d22574eefcb4afb788227669423684a860d))
+
 ## [1.7.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.6.0...v1.7.0) (2025-03-28)
 
 
