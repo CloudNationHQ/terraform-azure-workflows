@@ -46,4 +46,4 @@ jobs:
           go test -v -run TestValidateTerraformSchema -count=1 schema_test.go
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TERRAFORM_ROOT: "${{ github.workspace }}/caller"
+          TERRAFORM_ROOT: "${{ github.workspace }}"
