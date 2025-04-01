@@ -1,108 +1,28 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
-	"testing"
-
 	"github.com/cloudnationhq/az-cn-go-diffy"
+	"testing"
 )
 
 func TestTerraformSchemaValidation(t *testing.T) {
-	// Debug: Print working directory
-	wd, _ := os.Getwd()
-	t.Logf("Working directory: %s", wd)
-
-	// Debug: Check if caller directory exists at different paths
-	paths := []string{".", "..", "../..", "../../caller", "../../../caller"}
-	for _, p := range paths {
-		abs, _ := filepath.Abs(p)
-		_, err := os.Stat(abs)
-		if err == nil {
-			t.Logf("Path exists: %s (abs: %s)", p, abs)
-			// List files
-			files, _ := os.ReadDir(abs)
-			t.Logf("Files in %s:", abs)
-			for _, f := range files {
-				t.Logf("  - %s", f.Name())
-			}
-		} else {
-			t.Logf("Path does not exist: %s (abs: %s) - %v", p, abs, err)
-		}
-	}
-
-	// Debug: Check environment variable
-	envPath := os.Getenv("TERRAFORM_ROOT")
-	if envPath != "" {
-		t.Logf("TERRAFORM_ROOT env var: %s", envPath)
-		_, err := os.Stat(envPath)
-		if err == nil {
-			t.Logf("Env path exists")
-			// List files
-			files, _ := os.ReadDir(envPath)
-			t.Logf("Files in env path:")
-			for _, f := range files {
-				t.Logf("  - %s", f.Name())
-			}
-		} else {
-			t.Logf("Env path does not exist: %v", err)
-		}
-	} else {
-		t.Logf("TERRAFORM_ROOT env var not set")
-	}
-
-	// Use the environment variable directly
-	terraformRoot := envPath
-	if terraformRoot == "" {
-		terraformRoot = "../../caller" // Default
-	}
-
 	findings, err := diffy.ValidateSchema(
-		diffy.WithTerraformRoot(terraformRoot),
 		diffy.WithGitHubIssueCreation(),
+		diffy.WithTerraformRoot("caller"),
 		func(opts *diffy.SchemaValidatorOptions) {
 			opts.Silent = true
 		},
 	)
-
 	if err != nil {
 		t.Fatalf("Validation failed: %v", err)
 	}
-
 	for _, finding := range findings {
 		t.Logf("%s", diffy.FormatFinding(finding))
 	}
-
 	if len(findings) > 0 {
 		t.Errorf("Found %d missing properties/blocks in root or submodules. See logs above.", len(findings))
 	}
 }
-
-// package main
-//
-// import (
-// 	"github.com/cloudnationhq/az-cn-go-diffy"
-// 	"testing"
-// )
-//
-// func TestTerraformSchemaValidation(t *testing.T) {
-// 	findings, err := diffy.ValidateSchema(
-// 		diffy.WithGitHubIssueCreation(),
-// 		diffy.WithTerraformRoot("../../caller"),
-// 		func(opts *diffy.SchemaValidatorOptions) {
-// 			opts.Silent = true
-// 		},
-// 	)
-// 	if err != nil {
-// 		t.Fatalf("Validation failed: %v", err)
-// 	}
-// 	for _, finding := range findings {
-// 		t.Logf("%s", diffy.FormatFinding(finding))
-// 	}
-// 	if len(findings) > 0 {
-// 		t.Errorf("Found %d missing properties/blocks in root or submodules. See logs above.", len(findings))
-// 	}
-// }
 
 // package main
 //
