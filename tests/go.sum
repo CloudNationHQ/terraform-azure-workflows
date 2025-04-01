@@ -2,8 +2,8 @@ github.com/agext/levenshtein v1.2.1 h1:QmvMAjj2aEICytGiWzmxoE0x2KZvE0fvmqMOfy2tj
 github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/apparentlymart/go-textseg/v15 v15.0.0 h1:uYvfpb3DyLSCGWnctWKGj857c6ew1u1fNQOlOtuGxQY=
 github.com/apparentlymart/go-textseg/v15 v15.0.0/go.mod h1:K8XmNZdhEBkdlyDdvbmmsvpAG721bKi0joRfFdHIWJ4=
-github.com/cloudnationhq/az-cn-go-diffy v1.0.0 h1:TZc3bzZvV0VcEkPIn94SETaymAj+TLGOZh8r0Z3XCIE=
-github.com/cloudnationhq/az-cn-go-diffy v1.0.0/go.mod h1:UBJgMcdK0UCxr5PeaWcNYnfRZdaEncAnEKAej9T3hlk=
+github.com/cloudnationhq/az-cn-go-diffy v1.0.1 h1:a6vD7PoCrycgfPY8Eupzz2XcMlTFEYney5C7tnodNq8=
+github.com/cloudnationhq/az-cn-go-diffy v1.0.1/go.mod h1:UBJgMcdK0UCxr5PeaWcNYnfRZdaEncAnEKAej9T3hlk=
 github.com/cloudnationhq/az-cn-go-markparsr v1.1.0 h1:pgGTriEZ6AKQqub9jawYPiEP/FDmCEkvyrPidt/GhZw=
 github.com/cloudnationhq/az-cn-go-markparsr v1.1.0/go.mod h1:bPyOx4UdsAZQQNUybeZPeKIwxoVrYFSlzUnAsZgGMdQ=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
