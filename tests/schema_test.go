@@ -1,13 +1,14 @@
 package main
 
 import (
-	"testing"
 	"github.com/cloudnationhq/az-cn-go-diffy"
+	"testing"
 )
 
 func TestTerraformSchemaValidation(t *testing.T) {
 	findings, err := diffy.ValidateSchema(
 		diffy.WithGitHubIssueCreation(),
+		diffy.WithTerraformRoot("../../caller"),
 		func(opts *diffy.SchemaValidatorOptions) {
 			opts.Silent = true
 		},
