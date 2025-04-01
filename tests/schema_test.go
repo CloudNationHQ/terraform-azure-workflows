@@ -8,7 +8,7 @@ import (
 func TestTerraformSchemaValidation(t *testing.T) {
 	findings, err := diffy.ValidateSchema(
 		diffy.WithGitHubIssueCreation(),
-		diffy.WithTerraformRoot("."),
+		diffy.WithTerraformRoot("../../caller"),
 		func(opts *diffy.SchemaValidatorOptions) {
 			opts.Silent = true
 		},
