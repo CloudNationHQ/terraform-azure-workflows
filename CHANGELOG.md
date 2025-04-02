@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.9.0...v1.9.1) (2025-04-02)
+
+
+### Bug Fixes
+
+* fix cache dependency path issue ([#60](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/60)) ([07d4f20](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/07d4f20e72ec1b9dbbfe5833d29d34850614e39f))
+
 ## [1.9.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.8.0...v1.9.0) (2025-04-02)
 
 
