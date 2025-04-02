@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.8.0...v1.9.0) (2025-04-02)
+
+
+### Features
+
+* cleanup comments ([#58](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/58)) ([6c013e6](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/6c013e6a142066ab125efc4abdbde5f91efc2720))
+
 ## [1.8.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.7.0...v1.8.0) (2025-04-01)
 
 
