@@ -82,6 +82,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           check-latest: true
+          cache-dependency-path: called/tests/go.sum
 
       - name: fetch go modules
         working-directory: called/tests
