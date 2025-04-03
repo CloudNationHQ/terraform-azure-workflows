@@ -4,8 +4,8 @@ github.com/apparentlymart/go-textseg/v15 v15.0.0 h1:uYvfpb3DyLSCGWnctWKGj857c6ew
 github.com/apparentlymart/go-textseg/v15 v15.0.0/go.mod h1:K8XmNZdhEBkdlyDdvbmmsvpAG721bKi0joRfFdHIWJ4=
 github.com/cloudnationhq/az-cn-go-diffy v1.0.2 h1:vaqxpKvIijkBy/ffnVdbxwgGCVcVUrkOQuiuhE5nwBw=
 github.com/cloudnationhq/az-cn-go-diffy v1.0.2/go.mod h1:UBJgMcdK0UCxr5PeaWcNYnfRZdaEncAnEKAej9T3hlk=
-github.com/cloudnationhq/az-cn-go-markparsr v1.1.0 h1:pgGTriEZ6AKQqub9jawYPiEP/FDmCEkvyrPidt/GhZw=
-github.com/cloudnationhq/az-cn-go-markparsr v1.1.0/go.mod h1:bPyOx4UdsAZQQNUybeZPeKIwxoVrYFSlzUnAsZgGMdQ=
+github.com/cloudnationhq/az-cn-go-markparsr v1.2.0 h1:dOk8MHfjfcTcw0AuhWZbviGbi7pC/3XlSHz8PuDLZs4=
+github.com/cloudnationhq/az-cn-go-markparsr v1.2.0/go.mod h1:bPyOx4UdsAZQQNUybeZPeKIwxoVrYFSlzUnAsZgGMdQ=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-test/deep v1.0.3 h1:ZrJSEWsXzPOxaZnFteGEfooLba+ju3FYIbOrS+rQd68=
