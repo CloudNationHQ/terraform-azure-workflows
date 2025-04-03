@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.9.1...v1.10.0) (2025-04-03)
+
+
+### Features
+
+* increment markparsr package to version 1.2.0 ([#62](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/62)) ([03ef7f4](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/03ef7f4c050a39c9f4750452e5ae0b9455cb9f10))
+
 ## [1.9.1](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.9.0...v1.9.1) (2025-04-02)
 
 
