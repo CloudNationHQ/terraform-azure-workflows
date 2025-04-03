@@ -13,6 +13,7 @@ func TestReadmeValidation(t *testing.T) {
 			"Features", "Contributors", "Testing", "Notes", "References"),
 		markparsr.WithAdditionalFiles("CONTRIBUTING.md", "TESTING.md",
 			"CODE_OF_CONDUCT.md", "SECURITY.md", "GOALS.md"),
+		markparsr.WithProviderPrefixes("azurerm_", "random_", "tls_"),
 	)
 
 	if err != nil {
