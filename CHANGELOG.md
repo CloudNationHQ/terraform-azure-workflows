@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.11.0...v1.12.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** bump github.com/cloudnationhq/az-cn-go-diffy in /tests ([#67](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/67)) ([514853d](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/514853d08d9a5c4813eb2bf49880d6f348112a71))
+
 ## [1.11.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.10.0...v1.11.0) (2025-05-15)
 
 
