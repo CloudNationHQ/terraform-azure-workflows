@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.12.0...v1.13.0) (2025-06-25)
+
+
+### Features
+
+* add more provider prefixes markparsr package ([#69](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/69)) ([fff2179](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/fff21797d4debb2acce9f5e81b5bb385a975bf78))
+
 ## [1.12.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.11.0...v1.12.0) (2025-05-15)
 
 
