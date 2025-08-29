@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.user.login != 'release-please[bot]' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: terraform-linters/setup-tflint@v4
         name: Setup TFLint
@@ -73,7 +73,7 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'release-please[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.user.login != 'release-please[bot]' }}
     steps:
       - name: check out called repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: cloudnationhq/terraform-azure-workflows
           path: called
@@ -94,7 +94,7 @@ jobs:
         run: go mod download
 
       - name: check out caller repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }} # should be able to handle forked PRs, because of the branch prefix
           ref: ${{ github.event.pull_request.head.sha }}
