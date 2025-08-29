@@ -103,5 +103,8 @@ jobs:
           README_PATH: "${{ github.workspace }}/caller/README.md"
 
       - name: validate local changes
-        working-directory: called/tests
-        run: go run validator.go ../../caller/examples
+        working-directory: caller
+        run: go run ${{ github.workspace }}/called/tests/validator.go
+        env:
+          GOPATH: ${{ github.workspace }}/called/tests
+          GO111MODULE: off
