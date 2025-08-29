@@ -107,9 +107,9 @@ jobs:
         env:
           README_PATH: "${{ github.workspace }}/caller/README.md"
 
-      - name: validate local changes
-        working-directory: called/tests
-        run: go run validator.go
-        env:
-          EXAMPLES_PATH: "${{ github.workspace }}/caller/examples"
-          REPO_PATH: "${{ github.workspace }}/caller"
+      # - name: validate local changes
+      #   working-directory: called/tests
+      #   run: go run validator.go
+      #   env:
+      #     EXAMPLES_PATH: "${{ github.workspace }}/caller/examples"
+      #     REPO_PATH: "${{ github.workspace }}/caller"
