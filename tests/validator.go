@@ -7,9 +7,9 @@ import (
 )
 
 func main() {
-	examplesPath := "examples"
-	if len(os.Args) > 1 {
-		examplesPath = os.Args[1]
+	examplesPath := os.Getenv("EXAMPLES_PATH")
+	if examplesPath == "" {
+		examplesPath = "examples"
 	}
 
 	if err := validor.ValidateLocalChanges(examplesPath); err != nil {
