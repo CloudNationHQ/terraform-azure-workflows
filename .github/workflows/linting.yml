@@ -107,9 +107,15 @@ jobs:
         env:
           README_PATH: "${{ github.workspace }}/caller/README.md"
 
-      # - name: validate local changes
-      #   working-directory: called/tests
-      #   run: go run validator.go
-      #   env:
-      #     EXAMPLES_PATH: "${{ github.workspace }}/caller/examples"
-      #     REPO_PATH: "${{ github.workspace }}/caller"
+      - name: validate local changes
+        working-directory: called/tests
+        run: go run validator.go
+        env:
+          EXAMPLES_PATH: "${{ github.workspace }}/caller/examples"
+          REPO_PATH: "${{ github.workspace }}/caller"
+          ARM_CLIENT_ID: "00000000-0000-0000-0000-000000000000"
+          ARM_CLIENT_SECRET: "dummy-secret"
+          ARM_SUBSCRIPTION_ID: "00000000-0000-0000-0000-000000000000"
+          ARM_TENANT_ID: "00000000-0000-0000-0000-000000000000"
+          ARM_USE_MSI: "false"
+          ARM_SKIP_PROVIDER_REGISTRATION: "true"
