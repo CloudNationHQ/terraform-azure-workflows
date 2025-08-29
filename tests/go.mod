@@ -5,7 +5,7 @@ go 1.24.2
 require (
 	github.com/cloudnationhq/az-cn-go-diffy v1.1.1
 	github.com/cloudnationhq/az-cn-go-markparsr v1.2.0
-	github.com/cloudnationhq/az-cn-go-validor v1.5.1
+	github.com/cloudnationhq/az-cn-go-validor v1.5.2
 )
 
 require (

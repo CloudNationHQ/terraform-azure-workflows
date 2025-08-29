@@ -8,8 +8,8 @@ github.com/cloudnationhq/az-cn-go-diffy v1.1.1 h1:+yyPTmd+THQPacR7Cl7jy5UkbG+IuP
 github.com/cloudnationhq/az-cn-go-diffy v1.1.1/go.mod h1:UBJgMcdK0UCxr5PeaWcNYnfRZdaEncAnEKAej9T3hlk=
 github.com/cloudnationhq/az-cn-go-markparsr v1.2.0 h1:dOk8MHfjfcTcw0AuhWZbviGbi7pC/3XlSHz8PuDLZs4=
 github.com/cloudnationhq/az-cn-go-markparsr v1.2.0/go.mod h1:bPyOx4UdsAZQQNUybeZPeKIwxoVrYFSlzUnAsZgGMdQ=
-github.com/cloudnationhq/az-cn-go-validor v1.5.1 h1:hhrJV3a0ewwf6/Ez4LvjdCqU985uEjcLc5VgOwK9Qcs=
-github.com/cloudnationhq/az-cn-go-validor v1.5.1/go.mod h1:lSWXDiX3Zj/DC+OMJTdPFh6ItQA3qYwPxkxfPApsl0I=
+github.com/cloudnationhq/az-cn-go-validor v1.5.2 h1:AQl/8ktbqw+RU7gFNJOx4YzMeu+HelQcccWpKnm+uQU=
+github.com/cloudnationhq/az-cn-go-validor v1.5.2/go.mod h1:lSWXDiX3Zj/DC+OMJTdPFh6ItQA3qYwPxkxfPApsl0I=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
