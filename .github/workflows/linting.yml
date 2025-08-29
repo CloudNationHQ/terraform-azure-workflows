@@ -104,4 +104,4 @@ jobs:
 
       - name: validate local changes
         working-directory: caller
-        run: go run ${{ github.workspace }}/called/tests/validar.go
+        run: go run ${{ github.workspace }}/called/tests/validator.go
