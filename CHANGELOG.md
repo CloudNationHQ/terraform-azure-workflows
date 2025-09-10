@@ -7,7 +7,6 @@
 
 * **deps:** bump actions/checkout from 4 to 5 ([#74](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/74)) ([42b9052](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/42b9052ec372a0dd42e2c8f317358f9d81024a94))
 * **deps:** bump actions/setup-go from 5 to 6 ([#76](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/76)) ([3ebfcfb](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/3ebfcfbd2149f972378c30b455f50b7cbad4a868))
-* **deps:** bump amannn/action-semantic-pull-request from 5 to 6 ([#72](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/72)) ([5d5be1b](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/5d5be1bfd4ce2ce20f6993f09f1850abf3e610d2))
 * **deps:** bump terraform-linters/setup-tflint from 4 to 5 ([#73](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/73)) ([b3db067](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/b3db06714874c80004e40f597d785733f71acf38))
 * increment schema validator package version ([#77](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/77)) ([5f2366b](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/5f2366bd5cdfffad38b7d306a0e942d7b00ecdca))
 
