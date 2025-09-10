@@ -3,7 +3,7 @@ module github.com/cloudnationhq/terraform-azure-workflows
 go 1.24.2
 
 require (
-	github.com/cloudnationhq/az-cn-go-diffy v1.1.1
+	github.com/cloudnationhq/az-cn-go-diffy v1.2.0
 	github.com/cloudnationhq/az-cn-go-markparsr v1.2.0
 )
 
@@ -15,7 +15,6 @@ require (
 	github.com/hashicorp/hcl/v2 v2.23.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/zclconf/go-cty v1.16.2 // indirect
-	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/text v0.23.0 // indirect

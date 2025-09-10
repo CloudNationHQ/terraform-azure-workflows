@@ -2,8 +2,17 @@ name: schema
 
 on:
   workflow_call:
-  # schedule:
-  #   - cron: '0 0 * * 1'  # Weekly on Monday 00:00 UTC
+    inputs:
+      exclude_resources:
+        description: 'Comma-separated list of resource types to exclude'
+        required: false
+        type: string
+        default: ''
+      exclude_data_sources:
+        description: 'Comma-separated list of data source types to exclude'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -47,3 +56,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TERRAFORM_ROOT: "${{ github.workspace }}/caller/"
+          EXCLUDED_RESOURCES: ${{ inputs.exclude_resources }}
+          EXCLUDED_DATA_SOURCES: ${{ inputs.exclude_data_sources }}
