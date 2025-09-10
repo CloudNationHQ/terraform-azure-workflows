@@ -48,7 +48,7 @@ jobs:
         run: terraform init
 
       - name: setup go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           check-latest: true
 

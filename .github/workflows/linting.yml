@@ -79,7 +79,7 @@ jobs:
           path: called
 
       - name: setup go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           check-latest: true
           cache-dependency-path: called/tests/go.sum
