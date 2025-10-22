@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.15.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.14.0...v1.15.0) (2025-10-22)
+
+
+### Features
+
+* **deps:** bump terraform-linters/setup-tflint from 5 to 6 ([#81](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/81)) ([5c6ff23](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/5c6ff236b2dc73740a010b692d01e30e8db72f0d))
+* increment schema validator package ([#84](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/84)) ([9b6cfbb](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/9b6cfbb19d5681726e864562bdd9fe8ec98d23f0))
+
 ## [1.14.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.13.0...v1.14.0) (2025-09-10)
 
 
