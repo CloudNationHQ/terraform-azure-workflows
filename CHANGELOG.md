@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.16.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.15.0...v1.16.0) (2025-12-05)
+
+
+### Features
+
+* **deps:** bump actions/checkout from 5 to 6 ([#86](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/86)) ([e9cc42b](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/e9cc42bfd730f99fb4141295ae0f56c63b16f9f0))
+* **deps:** bump github.com/cloudnationhq/az-cn-go-markparsr in /tests ([#83](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/83)) ([c148360](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/c148360bcaa3274a98bdfe64a236745c1afefdee))
+
 ## [1.15.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.14.0...v1.15.0) (2025-10-22)
 
 
