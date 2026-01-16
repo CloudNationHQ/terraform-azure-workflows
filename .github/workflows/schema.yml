@@ -13,11 +13,6 @@ on:
         required: false
         type: string
         default: ''
-      parent_issue_ref:
-        description: 'Parent issue reference to mention (e.g., terraform-azure-wam#53)'
-        required: false
-        type: string
-        default: 'terraform-azure-wam#53'
 
 permissions:
   contents: read
@@ -28,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout workflow repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v5
         with:
           repository: cloudnationhq/terraform-azure-workflows
           path: called
@@ -49,7 +44,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Checkout target repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v5
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           path: caller
@@ -60,43 +55,6 @@ jobs:
         run: go test -v -run TestTerraformSchemaValidation -count=1 schema_test.go
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TERRAFORM_ROOT: "${{ github.workspace }}/caller/"
+          TERRAFORM_ROOT: \"${{ github.workspace }}/caller/\"
           EXCLUDED_RESOURCES: ${{ inputs.exclude_resources }}
           EXCLUDED_DATA_SOURCES: ${{ inputs.exclude_data_sources }}
-
-      - name: Comment parent link on matching issue
-        if: always() && inputs.parent_issue_ref != ''
-        uses: actions/github-script@v7
-        env:
-          PARENT_ISSUE_REF: ${{ inputs.parent_issue_ref }}
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const parentRef = process.env.PARENT_ISSUE_REF;
-            const needle = 'generated schema validation';
-
-            let match = null;
-            for (let page = 1; page <= 3 && !match; page++) {
-              const { data } = await github.rest.issues.listForRepo({
-                owner,
-                repo,
-                state: 'all',
-                per_page: 50,
-                page,
-              });
-              match = data.find(i => (i.title || '').toLowerCase().includes(needle));
-            }
-
-            if (!match) {
-              core.info('No issue with title containing \"Generated schema validation\" found; skipping link.');
-              return;
-            }
-
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: match.number,
-              body: `Related parent: ${parentRef}`,
-            });
