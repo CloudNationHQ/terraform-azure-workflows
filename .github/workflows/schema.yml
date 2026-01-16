@@ -75,17 +75,25 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const parentRef = process.env.PARENT_ISSUE_REF;
-            const { data: issues } = await github.rest.issues.listForRepo({
-              owner,
-              repo,
-              state: 'open',
-              per_page: 20,
-            });
-            const match = issues.find(i => i.title.includes('Generated schema validation'));
+            const needle = 'generated schema validation';
+
+            let match = null;
+            for (let page = 1; page <= 3 && !match; page++) {
+              const { data } = await github.rest.issues.listForRepo({
+                owner,
+                repo,
+                state: 'all',
+                per_page: 50,
+                page,
+              });
+              match = data.find(i => (i.title || '').toLowerCase().includes(needle));
+            }
+
             if (!match) {
-              core.info('No open issue with title containing "Generated schema validation" found; skipping link.');
+              core.info('No issue with title containing "Generated schema validation" found; skipping link.');
               return;
             }
+
             await github.rest.issues.createComment({
               owner,
               repo,
