@@ -10,9 +10,14 @@ jobs:
   validate-pr-title:
     name: pr commit
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
     steps:
-      - uses: amannn/action-semantic-pull-request@v6
+      - name: Skip for release-please
+        if: ${{ github.actor == 'release-please[bot]' || github.actor == 'github-actions[bot]' || github.event.pull_request.user.login == 'release-please[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+        run: echo "Skipped for release-please"
+
+      - name: Validate PR title
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+        uses: amannn/action-semantic-pull-request@v6
         with:
           types: |
             fix
@@ -24,93 +29,91 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  validate-pr-title-skip:
-    name: pr commit
-    runs-on: ubuntu-latest
-    if: ${{ github.actor == 'release-please[bot]' || github.actor == 'github-actions[bot]' || github.event.pull_request.user.login == 'release-please[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || contains(github.event.pull_request.labels.*.name, 'autorelease') }}
-    steps:
-      - run: echo "Skipped for release-please"
-
   run-tflint:
     name: linting
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
     steps:
+      - name: Skip for release-please
+        if: ${{ github.actor == 'release-please[bot]' || github.actor == 'github-actions[bot]' || github.event.pull_request.user.login == 'release-please[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+        run: echo "Skipped for release-please"
+
       - uses: actions/checkout@v6
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
 
       - uses: terraform-linters/setup-tflint@v6
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
         name: Setup TFLint
         with:
           tflint_version: v0.47.0
 
       - name: Run TFLint
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
         run: tflint
 
       - name: setup terraform
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
 
       - name: terraform init
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
         run: terraform init
 
       - name: terraform validate
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
         run: terraform validate
 
       - name: terraform fmt
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
         run: terraform fmt -check -recursive
         continue-on-error: false
-
-  run-tflint-skip:
-    name: linting
-    runs-on: ubuntu-latest
-    if: ${{ github.actor == 'release-please[bot]' || github.actor == 'github-actions[bot]' || github.event.pull_request.user.login == 'release-please[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || contains(github.event.pull_request.labels.*.name, 'autorelease') }}
-    steps:
-      - run: echo "Skipped for release-please"
 
   tests:
     name: global tests
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
     steps:
+      - name: Skip for release-please
+        if: ${{ github.actor == 'release-please[bot]' || github.actor == 'github-actions[bot]' || github.event.pull_request.user.login == 'release-please[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+        run: echo "Skipped for release-please"
+
       - name: check out called repo
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
         uses: actions/checkout@v6
         with:
           repository: cloudnationhq/terraform-azure-workflows
           path: called
 
       - name: setup go
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
         uses: actions/setup-go@v6
         with:
           check-latest: true
           cache-dependency-path: called/tests/go.sum
 
       - name: setup terraform
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
 
       - name: fetch go modules
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
         working-directory: called/tests
         run: go mod download
 
       - name: check out caller repo
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
         uses: actions/checkout@v6
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }} # should be able to handle forked PRs, because of the branch prefix
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
           path: caller
           fetch-depth: 0
 
       - name: run markdown tests
+        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
         working-directory: called/tests
         run: go test -v -run TestReadmeValidation markdown_test.go
         env:
           README_PATH: "${{ github.workspace }}/caller/README.md"
-
-  tests-skip:
-    name: global tests
-    runs-on: ubuntu-latest
-    if: ${{ github.actor == 'release-please[bot]' || github.actor == 'github-actions[bot]' || github.event.pull_request.user.login == 'release-please[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || contains(github.event.pull_request.labels.*.name, 'autorelease') }}
-    steps:
-      - run: echo "Skipped for release-please"
