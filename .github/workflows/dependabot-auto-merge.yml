@@ -63,7 +63,7 @@ jobs:
             echo "Skipping major update: $UPDATE_TYPE"
           fi
 
-      - name: Approve PR"
+      - name: Approve PR
         if: steps.check.outputs.allowed == 'true'
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
