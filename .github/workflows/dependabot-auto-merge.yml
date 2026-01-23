@@ -81,4 +81,4 @@ jobs:
           done
 
           echo "Merging..."
-          gh pr merge --${{ inputs.merge-method }} "$PR_URL"
+          gh pr merge --${{ inputs.merge-method }} --admin "$PR_URL"
