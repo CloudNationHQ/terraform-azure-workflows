@@ -24,6 +24,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  validate-pr-title-skip:
+    name: pr commit
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'release-please[bot]' || github.actor == 'github-actions[bot]' || github.event.pull_request.user.login == 'release-please[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+    steps:
+      - run: echo "Skipped for release-please"
+
   run-tflint:
     name: linting
     runs-on: ubuntu-latest
@@ -53,6 +60,13 @@ jobs:
       - name: terraform fmt
         run: terraform fmt -check -recursive
         continue-on-error: false
+
+  run-tflint-skip:
+    name: linting
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'release-please[bot]' || github.actor == 'github-actions[bot]' || github.event.pull_request.user.login == 'release-please[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+    steps:
+      - run: echo "Skipped for release-please"
 
   tests:
     name: global tests
@@ -93,3 +107,10 @@ jobs:
         run: go test -v -run TestReadmeValidation markdown_test.go
         env:
           README_PATH: "${{ github.workspace }}/caller/README.md"
+
+  tests-skip:
+    name: global tests
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'release-please[bot]' || github.actor == 'github-actions[bot]' || github.event.pull_request.user.login == 'release-please[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+    steps:
+      - run: echo "Skipped for release-please"
