@@ -18,12 +18,11 @@ on:
         required: false
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
   auto-merge:
-    # Run for Dependabot-authored PRs even if someone else triggers the event (e.g., reopen).
     if: github.actor == 'dependabot[bot]' || github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -39,10 +38,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.github-token || secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr review "$PR_URL" --approve
-
-      - name: Enable auto-merge
-        if: ${{ inputs.allow-majors || contains(fromJson('["version-update:semver-minor","version-update:semver-patch"]'), steps.meta.outputs.update-type) }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.github-token || secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge --auto --${{ inputs.merge-method }} "$PR_URL"
