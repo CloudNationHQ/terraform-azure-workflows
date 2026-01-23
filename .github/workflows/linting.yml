@@ -23,12 +23,10 @@ jobs:
   validate-pr-title:
     name: pr commit
     needs: check-release
+    if: needs.check-release.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
-      - if: needs.check-release.outputs.skip == 'true'
-        run: echo "Skipped for release-please"
-      - if: needs.check-release.outputs.skip != 'true'
-        uses: amannn/action-semantic-pull-request@v6
+      - uses: amannn/action-semantic-pull-request@v6
         with:
           types: |
             fix
@@ -44,22 +42,17 @@ jobs:
   run-tflint:
     name: linting
     needs: check-release
+    if: needs.check-release.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
-      - if: needs.check-release.outputs.skip == 'true'
-        run: echo "Skipped for release-please"
-      - if: needs.check-release.outputs.skip != 'true'
-        uses: actions/checkout@v6
-      - if: needs.check-release.outputs.skip != 'true'
-        uses: terraform-linters/setup-tflint@v6
+      - uses: actions/checkout@v6
+      - uses: terraform-linters/setup-tflint@v6
         with:
           tflint_version: v0.47.0
-      - if: needs.check-release.outputs.skip != 'true'
-        uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
-      - if: needs.check-release.outputs.skip != 'true'
-        run: |
+      - run: |
           tflint
           terraform init
           terraform validate
@@ -68,36 +61,29 @@ jobs:
   tests:
     name: global tests
     needs: check-release
+    if: needs.check-release.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
-      - if: needs.check-release.outputs.skip == 'true'
-        run: echo "Skipped for release-please"
-      - if: needs.check-release.outputs.skip != 'true'
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           repository: cloudnationhq/terraform-azure-workflows
           path: called
-      - if: needs.check-release.outputs.skip != 'true'
-        uses: actions/setup-go@v6
+      - uses: actions/setup-go@v6
         with:
           check-latest: true
           cache-dependency-path: called/tests/go.sum
-      - if: needs.check-release.outputs.skip != 'true'
-        uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
-      - if: needs.check-release.outputs.skip != 'true'
-        working-directory: called/tests
+      - working-directory: called/tests
         run: go mod download
-      - if: needs.check-release.outputs.skip != 'true'
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
           path: caller
           fetch-depth: 0
-      - if: needs.check-release.outputs.skip != 'true'
-        working-directory: called/tests
+      - working-directory: called/tests
         run: go test -v -run TestReadmeValidation markdown_test.go
         env:
           README_PATH: ${{ github.workspace }}/caller/README.md
