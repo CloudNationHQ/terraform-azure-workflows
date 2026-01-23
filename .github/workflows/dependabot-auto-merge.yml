@@ -48,9 +48,13 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr review "$PR_URL" --approve
 
-      - name: Enable auto-merge
+      - name: Wait for checks and merge
         if: ${{ inputs.allow-majors || contains(fromJson('["version-update:semver-minor","version-update:semver-patch"]'), steps.meta.outputs.update-type) }}
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge --auto --${{ inputs.merge-method }} "$PR_URL"
+        run: |
+          echo "Waiting for status checks to pass..."
+          gh pr checks "$PR_URL" --watch --fail-fast
+          echo "Checks passed, merging..."
+          gh pr merge --${{ inputs.merge-method }} "$PR_URL"
