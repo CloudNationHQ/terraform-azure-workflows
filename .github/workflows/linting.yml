@@ -7,30 +7,27 @@ permissions:
   pull-requests: read
 
 jobs:
-  validate-pr-title:
-    name: pr commit
+  check-release:
     runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
     steps:
-      - name: Check if release PR
-        id: check
+      - id: check
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           LABELS=$(gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json labels --jq '.labels[].name' | tr '\n' ' ')
           echo "Labels: $LABELS"
-          if [[ "$LABELS" == *"autorelease"* ]]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "Skipping - release PR detected"
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
+          [[ "$LABELS" == *"autorelease"* ]] && echo "skip=true" >> $GITHUB_OUTPUT || echo "skip=false" >> $GITHUB_OUTPUT
 
-      - name: Skip for release-please
-        if: steps.check.outputs.skip == 'true'
+  validate-pr-title:
+    name: pr commit
+    needs: check-release
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.check-release.outputs.skip == 'true'
         run: echo "Skipped for release-please"
-
-      - name: Validate PR title
-        if: steps.check.outputs.skip != 'true'
+      - if: needs.check-release.outputs.skip != 'true'
         uses: amannn/action-semantic-pull-request@v6
         with:
           types: |
@@ -46,116 +43,60 @@ jobs:
 
   run-tflint:
     name: linting
+    needs: check-release
     runs-on: ubuntu-latest
     steps:
-      - name: Check if release PR
-        id: check
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          LABELS=$(gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json labels --jq '.labels[].name' | tr '\n' ' ')
-          echo "Labels: $LABELS"
-          if [[ "$LABELS" == *"autorelease"* ]]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "Skipping - release PR detected"
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Skip for release-please
-        if: steps.check.outputs.skip == 'true'
+      - if: needs.check-release.outputs.skip == 'true'
         run: echo "Skipped for release-please"
-
-      - name: Checkout
-        if: steps.check.outputs.skip != 'true'
+      - if: needs.check-release.outputs.skip != 'true'
         uses: actions/checkout@v6
-
-      - name: Setup TFLint
-        if: steps.check.outputs.skip != 'true'
+      - if: needs.check-release.outputs.skip != 'true'
         uses: terraform-linters/setup-tflint@v6
         with:
           tflint_version: v0.47.0
-
-      - name: Run TFLint
-        if: steps.check.outputs.skip != 'true'
-        run: tflint
-
-      - name: Setup Terraform
-        if: steps.check.outputs.skip != 'true'
+      - if: needs.check-release.outputs.skip != 'true'
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
-
-      - name: Terraform init
-        if: steps.check.outputs.skip != 'true'
-        run: terraform init
-
-      - name: Terraform validate
-        if: steps.check.outputs.skip != 'true'
-        run: terraform validate
-
-      - name: Terraform fmt
-        if: steps.check.outputs.skip != 'true'
-        run: terraform fmt -check -recursive
+      - if: needs.check-release.outputs.skip != 'true'
+        run: |
+          tflint
+          terraform init
+          terraform validate
+          terraform fmt -check -recursive
 
   tests:
     name: global tests
+    needs: check-release
     runs-on: ubuntu-latest
     steps:
-      - name: Check if release PR
-        id: check
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          LABELS=$(gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json labels --jq '.labels[].name' | tr '\n' ' ')
-          echo "Labels: $LABELS"
-          if [[ "$LABELS" == *"autorelease"* ]]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "Skipping - release PR detected"
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Skip for release-please
-        if: steps.check.outputs.skip == 'true'
+      - if: needs.check-release.outputs.skip == 'true'
         run: echo "Skipped for release-please"
-
-      - name: Checkout called repo
-        if: steps.check.outputs.skip != 'true'
+      - if: needs.check-release.outputs.skip != 'true'
         uses: actions/checkout@v6
         with:
           repository: cloudnationhq/terraform-azure-workflows
           path: called
-
-      - name: Setup Go
-        if: steps.check.outputs.skip != 'true'
+      - if: needs.check-release.outputs.skip != 'true'
         uses: actions/setup-go@v6
         with:
           check-latest: true
           cache-dependency-path: called/tests/go.sum
-
-      - name: Setup Terraform
-        if: steps.check.outputs.skip != 'true'
+      - if: needs.check-release.outputs.skip != 'true'
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
-
-      - name: Fetch Go modules
-        if: steps.check.outputs.skip != 'true'
+      - if: needs.check-release.outputs.skip != 'true'
         working-directory: called/tests
         run: go mod download
-
-      - name: Checkout caller repo
-        if: steps.check.outputs.skip != 'true'
+      - if: needs.check-release.outputs.skip != 'true'
         uses: actions/checkout@v6
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
           path: caller
           fetch-depth: 0
-
-      - name: Run markdown tests
-        if: steps.check.outputs.skip != 'true'
+      - if: needs.check-release.outputs.skip != 'true'
         working-directory: called/tests
         run: go test -v -run TestReadmeValidation markdown_test.go
         env:

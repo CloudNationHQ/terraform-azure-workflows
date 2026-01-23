@@ -1,4 +1,4 @@
-name: "dependabot auto merge"
+name: dependabot auto merge
 
 on:
   workflow_call:
@@ -49,66 +49,36 @@ jobs:
         with:
           github-token: ${{ steps.app-token.outputs.token }}
 
-      - name: Check if auto-merge allowed
-        id: check
-        run: |
-          UPDATE_TYPE="${{ steps.meta.outputs.update-type }}"
-          ALLOW_MAJORS="${{ inputs.allow-majors }}"
-
-          if [[ "$ALLOW_MAJORS" == "true" ]] || [[ "$UPDATE_TYPE" == "version-update:semver-minor" ]] || [[ "$UPDATE_TYPE" == "version-update:semver-patch" ]]; then
-            echo "allowed=true" >> $GITHUB_OUTPUT
-            echo "Auto-merge allowed for $UPDATE_TYPE"
-          else
-            echo "allowed=false" >> $GITHUB_OUTPUT
-            echo "Skipping major update: $UPDATE_TYPE"
-          fi
-
-      - name: Approve PR
-        if: steps.check.outputs.allowed == 'true'
+      - name: Approve, wait and merge
+        if: inputs.allow-majors || contains(fromJSON('["version-update:semver-minor","version-update:semver-patch"]'), steps.meta.outputs.update-type)
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: gh pr review ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --approve
-
-      - name: Wait for checks and merge
-        if: steps.check.outputs.allowed == 'true'
-        env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          TIMEOUT: ${{ inputs.timeout-minutes }}
+          METHOD: ${{ inputs.merge-method }}
         run: |
-          PR="${{ github.event.pull_request.number }}"
-          REPO="${{ github.repository }}"
+          gh pr review $PR --repo $REPO --approve
+
           ELAPSED=0
-          TIMEOUT=$((TIMEOUT_MINUTES * 60))
+          MAX=$((TIMEOUT * 60))
+          echo "Waiting for checks (timeout: ${TIMEOUT}m)..."
 
-          echo "Waiting for checks (timeout: ${TIMEOUT_MINUTES}m)..."
-
-          while [ $ELAPSED -lt $TIMEOUT ]; do
+          while [ $ELAPSED -lt $MAX ]; do
             RESULT=$(gh pr checks $PR --repo $REPO --json name,state --jq '
               [.[] | select(.name | test("auto-merge") | not)] |
-              {
-                failed: [.[] | select(.state == "FAILURE" or .state == "ERROR")] | length,
-                pending: [.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS")] | length
-              }
-            ')
+              { failed: [.[] | select(.state == "FAILURE" or .state == "ERROR")] | length,
+                pending: [.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS")] | length }')
 
             FAILED=$(echo "$RESULT" | jq -r '.failed')
             PENDING=$(echo "$RESULT" | jq -r '.pending')
 
-            if [ "$FAILED" -gt 0 ]; then
-              echo "Checks failed"
-              exit 1
-            fi
+            [ "$FAILED" -gt 0 ] && echo "Checks failed" && exit 1
+            [ "$PENDING" -eq 0 ] && echo "Merging..." && gh pr merge $PR --repo $REPO --$METHOD --admin && exit 0
 
-            if [ "$PENDING" -eq 0 ]; then
-              echo "All checks passed, merging..."
-              gh pr merge $PR --repo $REPO --${{ inputs.merge-method }} --admin
-              exit 0
-            fi
-
-            echo "Waiting... ($PENDING pending, ${ELAPSED}s elapsed)"
+            echo "Waiting... ($PENDING pending, ${ELAPSED}s)"
             sleep 10
             ELAPSED=$((ELAPSED + 10))
           done
 
-          echo "Timeout waiting for checks"
-          exit 1
+          echo "Timeout" && exit 1
