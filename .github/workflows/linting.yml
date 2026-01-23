@@ -1,4 +1,4 @@
-name: "linting"
+name: linting
 
 on:
   workflow_call:
@@ -11,12 +11,22 @@ jobs:
     name: pr commit
     runs-on: ubuntu-latest
     steps:
+      - name: Check if release PR
+        id: check
+        run: |
+          LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
+          if echo "$LABELS" | grep -q "autorelease"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Skip for release-please
-        if: ${{ github.actor == 'release-please[bot]' || github.actor == 'github-actions[bot]' || github.event.pull_request.user.login == 'release-please[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+        if: steps.check.outputs.skip == 'true'
         run: echo "Skipped for release-please"
 
       - name: Validate PR title
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+        if: steps.check.outputs.skip != 'true'
         uses: amannn/action-semantic-pull-request@v6
         with:
           types: |
@@ -24,7 +34,8 @@ jobs:
             feat
             chore
           ignoreLabels: |
-            autorelease
+            autorelease: pending
+            autorelease: tagged
             dependencies
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -33,77 +44,97 @@ jobs:
     name: linting
     runs-on: ubuntu-latest
     steps:
+      - name: Check if release PR
+        id: check
+        run: |
+          LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
+          if echo "$LABELS" | grep -q "autorelease"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Skip for release-please
-        if: ${{ github.actor == 'release-please[bot]' || github.actor == 'github-actions[bot]' || github.event.pull_request.user.login == 'release-please[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+        if: steps.check.outputs.skip == 'true'
         run: echo "Skipped for release-please"
 
-      - uses: actions/checkout@v6
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+      - name: Checkout
+        if: steps.check.outputs.skip != 'true'
+        uses: actions/checkout@v6
 
-      - uses: terraform-linters/setup-tflint@v6
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
-        name: Setup TFLint
+      - name: Setup TFLint
+        if: steps.check.outputs.skip != 'true'
+        uses: terraform-linters/setup-tflint@v6
         with:
           tflint_version: v0.47.0
 
       - name: Run TFLint
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+        if: steps.check.outputs.skip != 'true'
         run: tflint
 
-      - name: setup terraform
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+      - name: Setup Terraform
+        if: steps.check.outputs.skip != 'true'
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
 
-      - name: terraform init
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+      - name: Terraform init
+        if: steps.check.outputs.skip != 'true'
         run: terraform init
 
-      - name: terraform validate
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+      - name: Terraform validate
+        if: steps.check.outputs.skip != 'true'
         run: terraform validate
 
-      - name: terraform fmt
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+      - name: Terraform fmt
+        if: steps.check.outputs.skip != 'true'
         run: terraform fmt -check -recursive
-        continue-on-error: false
 
   tests:
     name: global tests
     runs-on: ubuntu-latest
     steps:
+      - name: Check if release PR
+        id: check
+        run: |
+          LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
+          if echo "$LABELS" | grep -q "autorelease"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Skip for release-please
-        if: ${{ github.actor == 'release-please[bot]' || github.actor == 'github-actions[bot]' || github.event.pull_request.user.login == 'release-please[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+        if: steps.check.outputs.skip == 'true'
         run: echo "Skipped for release-please"
 
-      - name: check out called repo
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+      - name: Checkout called repo
+        if: steps.check.outputs.skip != 'true'
         uses: actions/checkout@v6
         with:
           repository: cloudnationhq/terraform-azure-workflows
           path: called
 
-      - name: setup go
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+      - name: Setup Go
+        if: steps.check.outputs.skip != 'true'
         uses: actions/setup-go@v6
         with:
           check-latest: true
           cache-dependency-path: called/tests/go.sum
 
-      - name: setup terraform
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+      - name: Setup Terraform
+        if: steps.check.outputs.skip != 'true'
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
 
-      - name: fetch go modules
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+      - name: Fetch Go modules
+        if: steps.check.outputs.skip != 'true'
         working-directory: called/tests
         run: go mod download
 
-      - name: check out caller repo
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+      - name: Checkout caller repo
+        if: steps.check.outputs.skip != 'true'
         uses: actions/checkout@v6
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
@@ -111,9 +142,9 @@ jobs:
           path: caller
           fetch-depth: 0
 
-      - name: run markdown tests
-        if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
+      - name: Run markdown tests
+        if: steps.check.outputs.skip != 'true'
         working-directory: called/tests
         run: go test -v -run TestReadmeValidation markdown_test.go
         env:
-          README_PATH: "${{ github.workspace }}/caller/README.md"
+          README_PATH: ${{ github.workspace }}/caller/README.md
