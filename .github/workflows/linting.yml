@@ -13,10 +13,13 @@ jobs:
     steps:
       - name: Check if release PR
         id: check
+        env:
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
         run: |
-          LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
-          if echo "$LABELS" | grep -q "autorelease"; then
+          echo "Labels: $LABELS"
+          if [[ "$LABELS" == *"autorelease"* ]]; then
             echo "skip=true" >> $GITHUB_OUTPUT
+            echo "Skipping - release PR detected"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
@@ -46,10 +49,13 @@ jobs:
     steps:
       - name: Check if release PR
         id: check
+        env:
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
         run: |
-          LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
-          if echo "$LABELS" | grep -q "autorelease"; then
+          echo "Labels: $LABELS"
+          if [[ "$LABELS" == *"autorelease"* ]]; then
             echo "skip=true" >> $GITHUB_OUTPUT
+            echo "Skipping - release PR detected"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
@@ -96,10 +102,13 @@ jobs:
     steps:
       - name: Check if release PR
         id: check
+        env:
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
         run: |
-          LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
-          if echo "$LABELS" | grep -q "autorelease"; then
+          echo "Labels: $LABELS"
+          if [[ "$LABELS" == *"autorelease"* ]]; then
             echo "skip=true" >> $GITHUB_OUTPUT
+            echo "Skipping - release PR detected"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
