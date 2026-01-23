@@ -14,8 +14,9 @@ jobs:
       - name: Check if release PR
         id: check
         env:
-          LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          LABELS=$(gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json labels --jq '.labels[].name' | tr '\n' ' ')
           echo "Labels: $LABELS"
           if [[ "$LABELS" == *"autorelease"* ]]; then
             echo "skip=true" >> $GITHUB_OUTPUT
@@ -50,8 +51,9 @@ jobs:
       - name: Check if release PR
         id: check
         env:
-          LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          LABELS=$(gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json labels --jq '.labels[].name' | tr '\n' ' ')
           echo "Labels: $LABELS"
           if [[ "$LABELS" == *"autorelease"* ]]; then
             echo "skip=true" >> $GITHUB_OUTPUT
@@ -103,8 +105,9 @@ jobs:
       - name: Check if release PR
         id: check
         env:
-          LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          LABELS=$(gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json labels --jq '.labels[].name' | tr '\n' ' ')
           echo "Labels: $LABELS"
           if [[ "$LABELS" == *"autorelease"* ]]; then
             echo "skip=true" >> $GITHUB_OUTPUT
