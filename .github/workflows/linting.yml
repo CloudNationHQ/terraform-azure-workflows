@@ -24,19 +24,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  branch-naming-rules:
-    name: branch name prefix
-    runs-on: ubuntu-latest
-    if: ${{ github.actor != 'release-please[bot]' && github.actor != 'github-actions[bot]' && github.event.pull_request.user.login != 'release-please[bot]' && github.event.pull_request.user.login != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'autorelease') }}
-    steps:
-      - uses: deepakputhraya/action-branch-name@master
-        with:
-          regex: '^(feat|fix)\/[a-z0-9_-]+$'
-          allowed_prefixes: 'feat,fix'
-          ignore: main,develop
-          min_length: 3
-          max_length: 60
-
   run-tflint:
     name: linting
     runs-on: ubuntu-latest
