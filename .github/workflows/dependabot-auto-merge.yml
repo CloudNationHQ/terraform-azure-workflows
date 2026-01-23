@@ -57,6 +57,28 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
           echo "Waiting for status checks to pass..."
-          gh pr checks "$PR_URL" --watch --fail-fast
-          echo "Checks passed, merging..."
+          # Wait for checks, excluding our own workflow
+          while true; do
+            # Get all check statuses except our own
+            CHECKS=$(gh pr checks "$PR_URL" --json name,state --jq '.[] | select(.name != "dependabot-auto-merge / auto-merge" and .name != "auto-merge")')
+
+            # Check if any are pending
+            PENDING=$(echo "$CHECKS" | grep -c '"state":"PENDING"' || true)
+            FAILED=$(echo "$CHECKS" | grep -c '"state":"FAILURE"' || true)
+
+            if [ "$FAILED" -gt 0 ]; then
+              echo "Some checks failed"
+              exit 1
+            fi
+
+            if [ "$PENDING" -eq 0 ]; then
+              echo "All checks passed"
+              break
+            fi
+
+            echo "Waiting for $PENDING checks..."
+            sleep 10
+          done
+
+          echo "Merging..."
           gh pr merge --${{ inputs.merge-method }} "$PR_URL"
