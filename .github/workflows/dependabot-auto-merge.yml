@@ -18,7 +18,7 @@ on:
         required: false
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -38,3 +38,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.github-token || secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr review "$PR_URL" --approve
+
+      - name: Enable auto-merge (native)
+        if: ${{ inputs.allow-majors || contains(fromJson('["version-update:semver-minor","version-update:semver-patch"]'), steps.meta.outputs.update-type) }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.github-token || secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --${{ inputs.merge-method }} "$PR_URL"
