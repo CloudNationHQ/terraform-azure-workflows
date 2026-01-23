@@ -14,10 +14,10 @@ on:
         default: false
         type: boolean
     secrets:
-      app-id:
-        required: false
-      app-private-key:
-        required: false
+      APP_ID:
+        required: true
+      APP_PRIVATE_KEY:
+        required: true
 
 permissions:
   contents: write
@@ -32,8 +32,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v1
         with:
-          app-id: ${{ secrets.app-id || secrets.APP_ID }}
-          private-key: ${{ secrets.app-private-key || secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Fetch Dependabot metadata
         id: meta
