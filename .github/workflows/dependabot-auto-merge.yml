@@ -14,7 +14,9 @@ on:
         default: false
         type: boolean
     secrets:
-      github-token:
+      app-id:
+        required: false
+      app-private-key:
         required: false
 
 permissions:
@@ -26,22 +28,29 @@ jobs:
     if: github.actor == 'dependabot[bot]' || github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
+      - name: Generate App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.app-id || secrets.APP_ID }}
+          private-key: ${{ secrets.app-private-key || secrets.APP_PRIVATE_KEY }}
+
       - name: Fetch Dependabot metadata
         id: meta
         uses: dependabot/fetch-metadata@v2
         with:
-          github-token: ${{ secrets.github-token || secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.app-token.outputs.token }}
 
       - name: Approve update
         if: ${{ inputs.allow-majors || contains(fromJson('["version-update:semver-minor","version-update:semver-patch"]'), steps.meta.outputs.update-type) }}
         env:
-          GITHUB_TOKEN: ${{ secrets.github-token || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr review "$PR_URL" --approve
 
-      - name: Enable auto-merge (native)
+      - name: Enable auto-merge
         if: ${{ inputs.allow-majors || contains(fromJson('["version-update:semver-minor","version-update:semver-patch"]'), steps.meta.outputs.update-type) }}
         env:
-          GITHUB_TOKEN: ${{ secrets.github-token || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr merge --auto --${{ inputs.merge-method }} "$PR_URL"
