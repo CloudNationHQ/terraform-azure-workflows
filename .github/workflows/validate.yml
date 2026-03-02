@@ -40,7 +40,7 @@ jobs:
           creds: ${{ env.AZURE_CREDENTIALS }}
 
       - name: setup terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
 
