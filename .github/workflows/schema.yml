@@ -55,6 +55,6 @@ jobs:
         run: go test -v -run TestTerraformSchemaValidation -count=1 schema_test.go
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TERRAFORM_ROOT: \"${{ github.workspace }}/caller/\"
+          TERRAFORM_ROOT: ${{ github.workspace }}/caller/
           EXCLUDED_RESOURCES: ${{ inputs.exclude_resources }}
           EXCLUDED_DATA_SOURCES: ${{ inputs.exclude_data_sources }}
