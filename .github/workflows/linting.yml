@@ -49,7 +49,7 @@ jobs:
       - uses: terraform-linters/setup-tflint@v6
         with:
           tflint_version: v0.47.0
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
       - run: |
@@ -72,7 +72,7 @@ jobs:
         with:
           check-latest: true
           cache-dependency-path: called/tests/go.sum
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
       - working-directory: called/tests
