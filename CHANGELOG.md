@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.17.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.16.0...v1.17.0) (2026-04-23)
+
+
+### Features
+
+* add issue to project workflow yml ([#94](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/94)) ([baa5356](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/baa53564151eca42c46ee0d1dce34870d128c897))
+* add secrets inherit to release workflow ([426eb3f](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/426eb3ff330c6455f407a6703c778804207cef4c))
+* **deps:** bump actions/checkout from 5 to 6 ([#90](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/90)) ([81fce89](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/81fce89b3d10febe92f733a7b76d297a9c7774a5))
+* **deps:** bump actions/create-github-app-token from 1 to 2 ([#92](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/92)) ([0eaa2dc](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/0eaa2dcc5fb03e9bcd1e5c12952a197045ab976e))
+* **deps:** bump github.com/cloudnationhq/az-cn-go-diffy in /tests ([#88](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/88)) ([a6155f8](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/a6155f854c91181ffae2db51f61c872dc3a384c6))
+* **deps:** bump hashicorp/setup-terraform from 3 to 4 ([#93](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/93)) ([cac21f4](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/cac21f4705ae2d3b8bbf851c97e7dbd90d18673a))
+* small cleanup ([476a249](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/476a24968102c4d6b8b72b7ddc0ba4cb0a26f64a))
+* small cleanup release workflow ([40b0492](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/40b049241e5b1c2a73ff991243a444bc38822bf3))
+
 ## [1.16.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.15.0...v1.16.0) (2025-12-05)
 
 
