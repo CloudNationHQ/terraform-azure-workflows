@@ -1,0 +1,37 @@
+name: Add new issues to WAM project board
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  add-to-project:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          app-id: ${{ vars.WAM_BOT_APP_ID }}
+          private-key: ${{ secrets.WAM_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Find and add recent issues to project board
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          SINCE=$(date -u -d '61 minutes ago' '+%Y-%m-%dT%H:%M:%SZ')
+
+          mapfile -t ALL_ISSUE_IDS < <(gh api "search/issues?q=org:CloudNationHQ+is:issue+is:open+created:>$SINCE&per_page=100" \
+            --jq '.items[] | select(.repository_url | test("terraform-azure-|terraform-azuread-|terraform-databricks-")) | select(.repository_url | test("terraform-azure-wam") | not) | .node_id')
+
+          for issue_id in "${ALL_ISSUE_IDS[@]}"; do
+            gh api graphql -f query='
+              mutation($project: ID!, $content: ID!) {
+                addProjectV2ItemById(input: {projectId: $project, contentId: $content}) {
+                  item { id }
+                }
+              }' -f project="${{ vars.WAM_PROJECT_ID }}" -f content="$issue_id" &
+          done
+          wait
