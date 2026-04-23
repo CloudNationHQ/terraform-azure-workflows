@@ -3,7 +3,7 @@ module github.com/cloudnationhq/terraform-azure-workflows
 go 1.24.2
 
 require (
-	github.com/cloudnationhq/az-cn-go-diffy v1.4.0
+	github.com/cloudnationhq/az-cn-go-diffy v1.5.0
 	github.com/cloudnationhq/az-cn-go-markparsr v1.4.1
 )
 
