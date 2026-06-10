@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.18.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.17.0...v1.18.0) (2026-06-10)
+
+
+### Features
+
+* **deps:** bump actions/create-github-app-token from 2 to 3 ([#97](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/97)) ([fc9be34](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/fc9be343c1846b5c43cc6b3d05da04e98151ffa0))
+* **deps:** bump azure/login from 2 to 3 ([#96](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/96)) ([60924b4](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/60924b48f22bd127a98d8ff717e95a0bbdcbc546))
+* **deps:** bump dependabot/fetch-metadata from 2 to 3 ([#95](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/95)) ([065f0f1](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/065f0f1fb5557465b25675abbb7e64d4153162b0))
+* **deps:** bump googleapis/release-please-action from 4 to 5 ([#98](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/98)) ([ad06653](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/ad0665345c348b7a4bdc33b374b2ab0a6ee8737a))
+
 ## [1.17.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.16.0...v1.17.0) (2026-04-23)
 
 
