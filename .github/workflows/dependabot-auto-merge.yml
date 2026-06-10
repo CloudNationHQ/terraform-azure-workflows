@@ -36,7 +36,7 @@ jobs:
     steps:
       - name: Generate App Token
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -45,7 +45,7 @@ jobs:
 
       - name: Fetch Dependabot metadata
         id: meta
-        uses: dependabot/fetch-metadata@v3
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
         with:
           github-token: ${{ steps.app-token.outputs.token }}
 
@@ -68,15 +68,17 @@ jobs:
             RESULT=$(gh pr checks $PR --repo $REPO --json name,state --jq '
               [.[] | select(.name | test("auto-merge") | not)] |
               { failed: [.[] | select(.state == "FAILURE" or .state == "ERROR")] | length,
-                pending: [.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS")] | length }')
+                pending: [.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS")] | length,
+                success: [.[] | select(.state == "SUCCESS")] | length }')
 
             FAILED=$(echo "$RESULT" | jq -r '.failed')
             PENDING=$(echo "$RESULT" | jq -r '.pending')
+            SUCCESS=$(echo "$RESULT" | jq -r '.success')
 
             [ "$FAILED" -gt 0 ] && echo "Checks failed" && exit 1
-            [ "$PENDING" -eq 0 ] && echo "Merging..." && gh pr merge $PR --repo $REPO --$METHOD --admin && exit 0
+            [ "$PENDING" -eq 0 ] && [ "$SUCCESS" -gt 0 ] && echo "Merging..." && gh pr merge $PR --repo $REPO --$METHOD --admin && exit 0
 
-            echo "Waiting... ($PENDING pending, ${ELAPSED}s)"
+            echo "Waiting... ($PENDING pending, $SUCCESS passed, ${ELAPSED}s)"
             sleep 10
             ELAPSED=$((ELAPSED + 10))
           done
