@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.1](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.18.0...v1.18.1) (2026-06-10)
+
+
+### Bug Fixes
+
+* fix several workflow issues ([#99](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/99)) ([5521ebe](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/5521ebe6846c0fea0065276f017a1232177ad5f7))
+
 ## [1.18.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.17.0...v1.18.0) (2026-06-10)
 
 
