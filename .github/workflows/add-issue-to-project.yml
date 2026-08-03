@@ -13,7 +13,7 @@ jobs:
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: app-token
         with:
-          app-id: ${{ vars.WAM_BOT_APP_ID }}
+          client-id: ${{ vars.WAM_BOT_APP_ID }}
           private-key: ${{ secrets.WAM_BOT_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
 
@@ -21,17 +21,40 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          SINCE=$(date -u -d '61 minutes ago' '+%Y-%m-%dT%H:%M:%SZ')
+          SINCE=$(date -u -d '7 days ago' '+%Y-%m-%d')
+          echo "Looking for issues created since: $SINCE"
 
-          mapfile -t ALL_ISSUE_IDS < <(gh api "search/issues?q=org:CloudNationHQ+is:issue+is:open+created:>$SINCE&per_page=100" \
-            --jq '.items[] | select(.repository_url | test("terraform-azure-|terraform-azuread-|terraform-databricks-")) | select(.repository_url | test("terraform-azure-wam") | not) | .node_id')
+          SEARCH_OUTPUT=$(gh api --paginate \
+            "search/issues?q=org:CloudNationHQ+is:issue+is:open+created:>$SINCE&per_page=100" \
+            --jq '.items[] | select(.repository_url | test("terraform-azure-|terraform-azuread-|terraform-databricks-")) | select(.repository_url | test("terraform-azure-wam") | not) | .node_id') \
+            || { echo "::error::Search API call failed."; exit 1; }
 
+          mapfile -t ALL_ISSUE_IDS <<< "$SEARCH_OUTPUT"
+          [[ "${#ALL_ISSUE_IDS[@]}" -eq 1 && "${ALL_ISSUE_IDS[0]}" == "" ]] && ALL_ISSUE_IDS=()
+
+          echo "Found ${#ALL_ISSUE_IDS[@]} issue(s) to process."
+
+          FAILED=0
           for issue_id in "${ALL_ISSUE_IDS[@]}"; do
-            gh api graphql -f query='
+            echo "Adding issue $issue_id ..."
+            if gh api graphql -f query='
               mutation($project: ID!, $content: ID!) {
                 addProjectV2ItemById(input: {projectId: $project, contentId: $content}) {
                   item { id }
                 }
-              }' -f project="${{ vars.WAM_PROJECT_ID }}" -f content="$issue_id" &
+              }' \
+              -f project="${{ vars.WAM_PROJECT_ID }}" \
+              -f content="$issue_id"; then
+              echo "  -> OK"
+            else
+              echo "  -> FAILED (issue_id=$issue_id)"
+              FAILED=$((FAILED + 1))
+            fi
           done
-          wait
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::error::$FAILED mutation(s) failed. Check token permissions and project ID."
+            exit 1
+          fi
+
+          echo "Done. All issues processed successfully."
