@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.19.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.18.1...v1.19.0) (2026-08-11)
+
+
+### Features
+
+* add global hcl unit testing ([#110](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/110)) ([69c30bf](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/69c30bf254456103e9320b1c8fbb0dac8134a679))
+
+
+### Bug Fixes
+
+* improve reliability and observability ([#107](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/107)) ([5ef19a1](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/5ef19a15143f031d6c91df93d6de7e187a7c0872))
+
 ## [1.18.1](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.18.0...v1.18.1) (2026-06-10)
 
 
