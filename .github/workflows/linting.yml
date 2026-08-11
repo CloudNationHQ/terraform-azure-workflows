@@ -58,6 +58,40 @@ jobs:
           terraform validate
           terraform fmt -check -recursive
 
+  unit-tests:
+    name: unit tests
+    needs: check-release
+    if: needs.check-release.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+      - name: run terraform unit tests
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          files=(*.tftest.hcl tests/*.tftest.hcl)
+
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "no *.tftest.hcl files found, nothing to run"
+            exit 0
+          fi
+
+          echo "discovered ${#files[@]} test file(s): ${files[*]}"
+
+          log="${RUNNER_TEMP:-/tmp}/tftest.log"
+
+          terraform init -backend=false -no-color >/dev/null
+          terraform test -no-color | tee "$log"
+
+          if ! grep -qE '^Success! [1-9][0-9]* passed' "$log"; then
+            echo "::error::test files are present but no tests ran"
+            exit 1
+          fi
+
   tests:
     name: global tests
     needs: check-release
