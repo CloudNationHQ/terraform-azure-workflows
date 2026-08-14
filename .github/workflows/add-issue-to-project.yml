@@ -2,8 +2,13 @@ name: Add new issues to WAM project board
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 0 * * *'
   workflow_dispatch:
+    inputs:
+      since:
+        description: 'Backfill from this date (YYYY-MM-DD). Leave empty to use the default 7-day lookback.'
+        required: false
+        default: ''
 
 jobs:
   add-to-project:
@@ -21,12 +26,13 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          SINCE=$(date -u -d '7 days ago' '+%Y-%m-%d')
+          SINCE="${{ inputs.since }}"
+          SINCE="${SINCE:-$(date -u -d '7 days ago' '+%Y-%m-%d')}"
           echo "Looking for issues created since: $SINCE"
 
           SEARCH_OUTPUT=$(gh api --paginate \
             "search/issues?q=org:CloudNationHQ+is:issue+is:open+created:>$SINCE&per_page=100" \
-            --jq '.items[] | select(.repository_url | test("terraform-azure-|terraform-azuread-|terraform-databricks-")) | select(.repository_url | test("terraform-azure-wam") | not) | .node_id') \
+            --jq '.items[] | select(.repository_url | test("terraform-azure-|terraform-azuread-|terraform-databricks-|wam-support|wam-internal")) | .node_id') \
             || { echo "::error::Search API call failed."; exit 1; }
 
           mapfile -t ALL_ISSUE_IDS <<< "$SEARCH_OUTPUT"
