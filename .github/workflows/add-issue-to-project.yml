@@ -2,7 +2,7 @@ name: Add new issues to WAM project board
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
 
           SEARCH_OUTPUT=$(gh api --paginate \
             "search/issues?q=org:CloudNationHQ+is:issue+is:open+created:>$SINCE&per_page=100" \
-            --jq '.items[] | select(.repository_url | test("terraform-azure-|terraform-azuread-|terraform-databricks-")) | select(.repository_url | test("terraform-azure-wam") | not) | .node_id') \
+            --jq '.items[] | select(.repository_url | test("terraform-azure-|terraform-azuread-|terraform-databricks-|wam-support|wam-internal")) | .node_id') \
             || { echo "::error::Search API call failed."; exit 1; }
 
           mapfile -t ALL_ISSUE_IDS <<< "$SEARCH_OUTPUT"
