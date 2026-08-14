@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.19.0...v1.20.0) (2026-08-14)
+
+
+### Features
+
+* **add-issue-to-project:** add wam-support/wam-internal repos and switch to daily schedule ([#111](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/111)) ([36a646d](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/36a646dc5a88b23e7eed6dca7b0ff385fd83b936))
+
 ## [1.19.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.18.1...v1.19.0) (2026-08-11)
 
 
