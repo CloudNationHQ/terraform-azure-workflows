@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:
+    inputs:
+      since:
+        description: 'Backfill from this date (YYYY-MM-DD). Leave empty to use the default 7-day lookback.'
+        required: false
+        default: ''
 
 jobs:
   add-to-project:
@@ -21,7 +26,8 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          SINCE=$(date -u -d '7 days ago' '+%Y-%m-%d')
+          SINCE="${{ inputs.since }}"
+          SINCE="${SINCE:-$(date -u -d '7 days ago' '+%Y-%m-%d')}"
           echo "Looking for issues created since: $SINCE"
 
           SEARCH_OUTPUT=$(gh api --paginate \
