@@ -65,6 +65,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TERRAFORM_ROOT: ${{ github.workspace }}/caller/
-          EXCLUDED_RESOURCES: azapi_resource,time_static,time_sleep,time_rotating,${{ inputs.exclude_resources }}
+          EXCLUDED_RESOURCES: ${{ inputs.exclude_resources }}
           EXCLUDED_DATA_SOURCES: ${{ inputs.exclude_data_sources }}
           EXCLUDED_PROPERTIES: ${{ inputs.exclude_properties }}
