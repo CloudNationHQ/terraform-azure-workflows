@@ -13,6 +13,11 @@ on:
         required: false
         type: string
         default: ''
+      exclude_properties:
+        description: 'Comma-separated list of resource_type.property entries to exclude'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -62,3 +67,4 @@ jobs:
           TERRAFORM_ROOT: ${{ github.workspace }}/caller/
           EXCLUDED_RESOURCES: ${{ inputs.exclude_resources }}
           EXCLUDED_DATA_SOURCES: ${{ inputs.exclude_data_sources }}
+          EXCLUDED_PROPERTIES: ${{ inputs.exclude_properties }}
