@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.20.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.19.0...v1.20.0) (2026-10-22)
+
+
+### Features
+
+* add exclude_properties input to schema validation ([#117](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/117)) ([348131a](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/348131a8eace8ac4ec9b0377e1bc2183d4f28924))
+* **add-issue-to-project:** add wam-support/wam-internal repos and switch to daily schedule ([#111](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/111)) ([36a646d](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/36a646dc5a88b23e7eed6dca7b0ff385fd83b936))
+
+
+### Bug Fixes
+
+* recognise azapi resources in README validation ([#116](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/116)) ([685d620](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/685d620f9973af1d1ed4e59a47cd2b55b63799bb))
+
 ## [1.19.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.18.1...v1.19.0) (2026-08-11)
 
 
