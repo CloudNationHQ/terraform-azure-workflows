@@ -44,6 +44,9 @@ jobs:
           else
             REPOS=$(gh api --paginate "orgs/$OWNER/repos?per_page=100&type=all" \
               --jq '.[] | select(.archived | not) | select(.name | test("^terraform-azure(ad)?-")) | .name' \
+              | while read -r repo; do
+                  gh api "repos/$OWNER/$repo/contents/main.tf" --silent </dev/null 2>/dev/null && echo "$repo"
+                done \
               | jq -R . | jq -sc 'sort')
           fi
 
