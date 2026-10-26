@@ -3,6 +3,8 @@ name: schema central
 on:
   schedule:
     - cron: '0 0 * * 1'
+  push:
+    branches: [feat/central-schema-validation]
   workflow_dispatch:
     inputs:
       repositories:
@@ -37,7 +39,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           OWNER: ${{ github.repository_owner }}
-          REQUESTED: ${{ inputs.repositories }}
+          REQUESTED: ${{ inputs.repositories || (github.event_name == 'push' && 'terraform-azure-pdns,terraform-azure-vgw,terraform-azure-sql,terraform-azure-sub' || '') }}
         run: |
           if [ -n "$REQUESTED" ]; then
             REPOS=$(jq -cn --arg r "$REQUESTED" '$r | split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(. != ""))')
