@@ -1,0 +1,17 @@
+{
+  "skip": [
+    "terraform-azure-workflows",
+    "terraform-azure-naming",
+    "terraform-azure-locations",
+    "terraform-azure-sub",
+    "terraform-azure-el-ed",
+    "terraform-azure-fleet",
+    "terraform-azure-avd",
+    "terraform-azure-dpv"
+  ],
+  "exclusions": {
+    "terraform-azure-sql": {
+      "data_sources": "azuread_user,azuread_group,azuread_service_principal"
+    }
+  }
+}
