@@ -22,6 +22,7 @@
       "azapi_resource.sensitive_body_version",
       "azapi_resource.update_headers",
       "azapi_resource.update_query_parameters",
+      "azurerm_key_vault.access_policy",
       "azurerm_private_endpoint.edge_zone",
       "azurerm_role_assignment.delegated_managed_identity_resource_id",
       "azurerm_role_assignment.name",
