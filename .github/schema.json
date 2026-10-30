@@ -1,0 +1,36 @@
+{
+  "global": {
+    "properties": [
+      "azapi_resource.create_headers",
+      "azapi_resource.create_query_parameters",
+      "azapi_resource.delete_headers",
+      "azapi_resource.delete_query_parameters",
+      "azapi_resource.ignore_body_changes",
+      "azapi_resource.ignore_casing",
+      "azapi_resource.ignore_missing_property",
+      "azapi_resource.ignore_null_property",
+      "azapi_resource.ignore_other_items_in_list",
+      "azapi_resource.list_unique_id_property",
+      "azapi_resource.locks",
+      "azapi_resource.read_headers",
+      "azapi_resource.read_query_parameters",
+      "azapi_resource.replace_triggers_external_values",
+      "azapi_resource.replace_triggers_refs",
+      "azapi_resource.response_export_values",
+      "azapi_resource.retry",
+      "azapi_resource.sensitive_body",
+      "azapi_resource.sensitive_body_version",
+      "azapi_resource.update_headers",
+      "azapi_resource.update_query_parameters",
+      "azurerm_key_vault.access_policy",
+      "azurerm_private_endpoint.edge_zone",
+      "azurerm_role_assignment.delegated_managed_identity_resource_id",
+      "azurerm_role_assignment.name",
+      "azurerm_role_assignment.role_definition_id",
+      "azurerm_subnet.network_security_group_id_wo",
+      "azurerm_subnet.network_security_group_id_wo_version",
+      "azurerm_subnet.route_table_id_wo",
+      "azurerm_subnet.route_table_id_wo_version"
+    ]
+  }
+}
