@@ -1,7 +1,11 @@
 {
   "skip": [
     "terraform-azure-workflows",
-    "terraform-azure-naming"
+    "terraform-azure-naming",
+    "terraform-azuread-pim",
+    "terraform-azure-dpv",
+    "terraform-azure-el-ed",
+    "terraform-azure-fleet"
   ],
   "exclusions": {
     "terraform-azure-sql": {
