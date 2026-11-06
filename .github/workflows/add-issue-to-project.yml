@@ -32,7 +32,7 @@ jobs:
 
           SEARCH_OUTPUT=$(gh api --paginate \
             "search/issues?q=org:CloudNationHQ+is:issue+is:open+created:>$SINCE&per_page=100" \
-            --jq '.items[] | select(.repository_url | test("terraform-azure-|terraform-azuread-|terraform-databricks-|wam-support|wam-internal")) | .node_id') \
+            --jq '.items[] | select(.repository_url | test("terraform-azure-|terraform-azuread-|terraform-databricks-|wam-support|wam-internal|ttye-wam-mcp|ttye-alz-mcp|ttye-azure-mcp|ttye-wam-mcp-platform")) | .node_id') \
             || { echo "::error::Search API call failed."; exit 1; }
 
           mapfile -t ALL_ISSUE_IDS <<< "$SEARCH_OUTPUT"
