@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.20.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.19.0...v1.20.0) (2026-11-06)
+
+
+### Features
+
+* add exclude_properties input to schema validation ([#117](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/117)) ([348131a](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/348131a8eace8ac4ec9b0377e1bc2183d4f28924))
+* add global schema property exclusions ([#118](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/118)) ([447a55e](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/447a55ec0bd1c8fa920a031b2dc022240261013d))
+* **add-issue-to-project:** add wam-support/wam-internal repos and switch to daily schedule ([#111](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/111)) ([36a646d](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/36a646dc5a88b23e7eed6dca7b0ff385fd83b936))
+* move syn schema exclusion to central config ([#120](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/120)) ([b967d24](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/b967d24122a0321665f1bf6cb8c79b6e57cef712))
+* run schema validation centrally for all modules ([#119](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/119)) ([10bab87](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/10bab8737d82022ae53ce01f8008e9f128ea2113))
+
+
+### Bug Fixes
+
+* recognise azapi resources in README validation ([#116](https://github.com/CloudNationHQ/terraform-azure-workflows/issues/116)) ([685d620](https://github.com/CloudNationHQ/terraform-azure-workflows/commit/685d620f9973af1d1ed4e59a47cd2b55b63799bb))
+
 ## [1.19.0](https://github.com/CloudNationHQ/terraform-azure-workflows/compare/v1.18.1...v1.19.0) (2026-08-11)
 
 
