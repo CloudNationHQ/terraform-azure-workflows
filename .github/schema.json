@@ -10,6 +10,9 @@
   "exclusions": {
     "terraform-azure-sql": {
       "data_sources": "azuread_user,azuread_group,azuread_service_principal"
+    },
+    "terraform-azure-syn": {
+      "properties": "azurerm_private_endpoint.private_service_connection.private_connection_resource_alias"
     }
   },
   "global": {
