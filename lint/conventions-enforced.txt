@@ -1,0 +1,3 @@
+# Repos where the conventions job fails on error findings (enforce mode).
+# One repo name per line, without the org. All other repos run in warning mode.
+# Add a repo here once its baseline is clean.

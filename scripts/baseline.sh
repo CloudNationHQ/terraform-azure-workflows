@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Run the shared tflint config (lint/.tflint.hcl) across all module repos and
-# write a baseline report. Changes nothing in the module repos.
+# Run the shared tflint config (lint/.tflint.hcl) and the WAM convention checks
+# (tests/conventions) across all module repos, and write baseline reports:
+#   <outdir>/report.md              tflint findings
+#   <outdir>/conventions-report.md  convention findings (conventions.json has the details)
+# Changes nothing in the module repos.
 #
-# Usage: scripts/tflint-baseline.sh [outdir]      (default outdir: ./baseline)
+# Usage: scripts/baseline.sh [outdir]      (default outdir: ./baseline)
 # Env:   ORG (CloudNationHQ), TOPIC (wam), TFLINT (tflint), REPOS (space-separated subset)
-# Needs: gh (authenticated), jq, git, tflint.
+# Needs: gh (authenticated), jq, git, go, tflint.
 # On Windows, use a short outdir: git clone fails when the path gets too long.
 set -euo pipefail
 
@@ -159,4 +162,15 @@ jq -r --arg date "$utc_date" --arg version "$version" '
    end)
 ' "$results" > "$outdir/report.md"
 
-echo "report: $outdir/report.md"
+# Convention checks: build the checker once and run it over every clone.
+tests_dir="$(cd "$(dirname "$0")/../tests" && pwd)"
+wamlint="$outdir/wamlint"
+(cd "$tests_dir" && go build -o "$wamlint" ./cmd/wamlint)
+dirs=()
+for repo in "${repos[@]}"; do
+  [[ -d "$work/$repo" ]] && dirs+=("$work/$repo")
+done
+"$wamlint" -format json "${dirs[@]}" > "$outdir/conventions.json"
+"$wamlint" -format markdown "${dirs[@]}" > "$outdir/conventions-report.md"
+
+echo "reports: $outdir/report.md, $outdir/conventions-report.md"
