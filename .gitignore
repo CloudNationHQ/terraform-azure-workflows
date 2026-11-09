@@ -19,3 +19,6 @@
 
 # Go workspace file
 go.work
+
+# tflint baseline output (scripts/baseline.sh)
+baseline/
