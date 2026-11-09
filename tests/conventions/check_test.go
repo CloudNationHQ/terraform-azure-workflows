@@ -238,6 +238,26 @@ variable "instance" { type = string }`}, want: []string{
   type = string
   default = "x"
 }`}, want: []string{"WAM013@variables.tf:3"}},
+		{name: "WAM013 value defaults", files: map[string]string{"variables.tf": `variable "a" {
+  type = bool
+  default = false
+}
+variable "b" {
+  type = map(string)
+  default = { x = "y" }
+}`}, want: []string{"WAM013@variables.tf:3", "WAM013@variables.tf:7"}},
+		{name: "WAM013 empty defaults allowed", files: map[string]string{"variables.tf": `variable "a" {
+  type = map(string)
+  default = {}
+}
+variable "b" {
+  type = list(string)
+  default = []
+}
+variable "c" {
+  type = string
+  default = null
+}`}},
 		{name: "WAM013 location default allowed", files: map[string]string{"variables.tf": `variable "location" {
   type = string
   default = null

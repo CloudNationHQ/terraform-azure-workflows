@@ -430,10 +430,25 @@ func (f *fileCheck) checkWAM013() {
 		case "location", "resource_group_name", "tags":
 			continue
 		}
-		if attr := block.Body.Attributes["default"]; attr != nil {
+		if attr := block.Body.Attributes["default"]; attr != nil && !emptyDefault(attr.Expr) {
 			f.add("WAM013", attr.SrcRange.Start.Line,
-				"only location, resource_group_name and tags may have a default")
+				"use an empty default (null, {} or []) and put value defaults on the type in variables.tf")
 		}
+	}
+}
+
+// emptyDefault reports whether a default only marks an input as optional
+// (null, {} or []) rather than choosing a value for the caller.
+func emptyDefault(expr hclsyntax.Expression) bool {
+	switch value := expr.(type) {
+	case *hclsyntax.LiteralValueExpr:
+		return value.Val.IsNull()
+	case *hclsyntax.ObjectConsExpr:
+		return len(value.Items) == 0
+	case *hclsyntax.TupleConsExpr:
+		return len(value.Exprs) == 0
+	default:
+		return false
 	}
 }
 
