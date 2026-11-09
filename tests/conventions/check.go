@@ -430,11 +430,22 @@ func (f *fileCheck) checkWAM013() {
 		case "location", "resource_group_name", "tags":
 			continue
 		}
-		if attr := block.Body.Attributes["default"]; attr != nil && !emptyDefault(attr.Expr) {
-			f.add("WAM013", attr.SrcRange.Start.Line,
-				"use an empty default (null, {} or []) and put value defaults on the type in variables.tf")
+		attr := block.Body.Attributes["default"]
+		if attr == nil || emptyDefault(attr.Expr) {
+			continue
 		}
+		// rule 19: use_existing_* flags default to false (create the resource).
+		if strings.HasPrefix(block.Labels[0], "use_existing_") && isFalse(attr.Expr) {
+			continue
+		}
+		f.add("WAM013", attr.SrcRange.Start.Line,
+			"use an empty default (null, {} or []) and put value defaults on the type in variables.tf")
 	}
+}
+
+func isFalse(expr hclsyntax.Expression) bool {
+	value, ok := expr.(*hclsyntax.LiteralValueExpr)
+	return ok && value.Val.RawEquals(cty.False)
 }
 
 // emptyDefault reports whether a default only marks an input as optional

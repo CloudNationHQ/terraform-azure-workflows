@@ -43,7 +43,7 @@ var catalogue = []Rule{
 	{ID: "WAM010", Standard: "26", Severity: SeverityError, Title: "moved blocks only in moved_vX_to_vY.tf"},
 	{ID: "WAM011", Standard: "1, 10", Severity: SeverityWarning, Title: `sentinel key is "this", not "default"`},
 	{ID: "WAM012", Standard: "5", Severity: SeverityError, Title: "no config, instance, environment or naming variable"},
-	{ID: "WAM013", Standard: "6", Severity: SeverityError, Title: "only location, resource_group_name and tags have value defaults; other inputs default to null, {} or []"},
+	{ID: "WAM013", Standard: "6", Severity: SeverityError, Title: "only location, resource_group_name and tags have value defaults; other inputs default to null, {} or [] (use_existing_* to false)"},
 	{ID: "WAM014", Standard: "7", Severity: SeverityError, Title: "no default on security flags"},
 }
 

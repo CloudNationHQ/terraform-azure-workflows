@@ -17,7 +17,7 @@ These checks run in the `conventions` job of `.github/workflows/linting.yml` on 
 | WAM010 | 26 | error | moved blocks only in moved_vX_to_vY.tf |
 | WAM011 | 1, 10 | warning | sentinel key is "this", not "default" |
 | WAM012 | 5 | error | no config, instance, environment or naming variable |
-| WAM013 | 6 | error | only location, resource_group_name and tags have value defaults; other inputs default to null, {} or [] |
+| WAM013 | 6 | error | only location, resource_group_name and tags have value defaults; other inputs default to null, {} or [] (use_existing_* to false) |
 | WAM014 | 7 | error | no default on security flags |
 
 ## Ignoring a finding

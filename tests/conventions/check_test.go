@@ -258,6 +258,14 @@ variable "c" {
   type = string
   default = null
 }`}},
+		{name: "WAM013 use_existing false allowed, true flagged", files: map[string]string{"variables.tf": `variable "use_existing_vnet" {
+  type = bool
+  default = false
+}
+variable "use_existing_zone" {
+  type = bool
+  default = true
+}`}, want: []string{"WAM013@variables.tf:7"}},
 		{name: "WAM013 location default allowed", files: map[string]string{"variables.tf": `variable "location" {
   type = string
   default = null
